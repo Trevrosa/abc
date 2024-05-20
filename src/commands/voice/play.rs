@@ -2,9 +2,7 @@ use anyhow::Result;
 use serenity::all::{Context, Message};
 
 use super::{edit_message, Reply};
-use crate::{
-    TrackHandleKey,
-};
+use crate::TrackHandleKey;
 
 pub async fn play(ctx: Context, msg: Message) {
     let global_track = ctx.data.read().await;
@@ -36,13 +34,15 @@ pub async fn play(ctx: Context, msg: Message) {
             } else {
                 greet
                     .edit(ctx.http, edit_message("faild to download"))
-                    .await.unwrap();
+                    .await
+                    .unwrap();
                 return;
             }
         } else {
             greet
                 .edit(ctx.http, edit_message("faild to download"))
-                .await.unwrap();
+                .await
+                .unwrap();
             return;
         }
     } else if !msg.attachments.is_empty() {
@@ -51,13 +51,15 @@ pub async fn play(ctx: Context, msg: Message) {
         } else {
             greet
                 .edit(ctx.http, edit_message("faild to download"))
-                .await.unwrap();
+                .await
+                .unwrap();
             return;
         }
     } else {
         greet
             .edit(ctx.http, edit_message("u dont say wat i play"))
-            .await.unwrap();
+            .await
+            .unwrap();
         return;
     };
 
@@ -65,7 +67,10 @@ pub async fn play(ctx: Context, msg: Message) {
         let mut handler = handler.lock().await;
         let track = handler.play_only_input(input.into());
 
-        greet.edit(ctx.http, edit_message("playing for u!")).await.unwrap();
+        greet
+            .edit(ctx.http, edit_message("playing for u!"))
+            .await
+            .unwrap();
         // track.add_event(Event::Track(TrackEvent::End), VoiceHandler);
 
         let mut global_track = ctx.data.write().await;
@@ -74,6 +79,7 @@ pub async fn play(ctx: Context, msg: Message) {
     } else {
         greet
             .edit(ctx.http, edit_message("faild to get voice handler"))
-            .await.unwrap();
+            .await
+            .unwrap();
     }
 }

@@ -2,7 +2,7 @@ use anyhow::Result;
 use serenity::all::{Context, Message};
 
 use super::Reply;
-use crate::{TrackHandleKey};
+use crate::TrackHandleKey;
 
 pub async fn resume(ctx: Context, msg: Message) {
     let global_track = ctx.data.read().await;

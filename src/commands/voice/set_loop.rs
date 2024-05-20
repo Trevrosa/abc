@@ -2,7 +2,7 @@ use anyhow::Result;
 use serenity::all::{Context, Message};
 use songbird::tracks::LoopState;
 
-use crate::{TrackHandleKey};
+use crate::TrackHandleKey;
 
 use super::Reply;
 

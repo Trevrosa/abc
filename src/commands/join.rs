@@ -8,11 +8,11 @@ pub async fn join(ctx: Context, msg: Message) {
             channels
         } else {
             ctx.reply("faild to get channels", &msg).await;
-            return
+            return;
         }
     } else {
         ctx.reply("faild to get guild", &msg).await;
-        return
+        return;
     };
 
     let channel = channel
@@ -34,7 +34,7 @@ pub async fn join(ctx: Context, msg: Message) {
 
     if channel.is_empty() {
         ctx.reply("u arent in a vc", &msg).await;
-        return
+        return;
     }
 
     let channel = channel[0];
@@ -42,7 +42,7 @@ pub async fn join(ctx: Context, msg: Message) {
     if let Some(manager) = songbird::get(&ctx).await {
         let Some(guild) = msg.guild_id else {
             ctx.reply("faild to get guild", &msg).await;
-            return
+            return;
         };
 
         if manager.join(guild, channel.id).await.is_ok() {
