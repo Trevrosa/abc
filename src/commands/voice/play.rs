@@ -1,4 +1,3 @@
-use anyhow::Result;
 use serenity::all::{Context, Message};
 
 use super::{edit_message, Reply};

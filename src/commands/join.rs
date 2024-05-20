@@ -49,7 +49,6 @@ pub async fn join(ctx: Context, msg: Message) {
             ctx.reply("joined u", &msg).await;
         } else {
             ctx.reply("faild to join", &msg).await;
-            return;
         }
     } else {
         ctx.reply("voice manager failed", &msg).await;
