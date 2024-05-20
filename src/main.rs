@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+#![allow(clippy::missing_errors_doc)]
 
 pub mod commands;
 pub mod error;
@@ -7,7 +8,13 @@ mod listener;
 use anyhow::Result;
 use listener::Listener;
 use serenity::prelude::*;
-use songbird::SerenityInit;
+use songbird::{tracks::TrackHandle, SerenityInit};
+
+pub struct TrackHandleKey;
+
+impl TypeMapKey for TrackHandleKey {
+    type Value = TrackHandle;
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -19,7 +26,7 @@ async fn main() -> Result<()> {
 
     let mut client: Client = Client::builder(token, intents)
         .event_handler(Listener)
-        // .type_map(TypeMap::custom())
+        .type_map(TypeMap::custom())
         .register_songbird()
         .await?;
 

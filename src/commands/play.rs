@@ -1,9 +1,15 @@
 use anyhow::Result;
 use serenity::all::{Context, Message};
-// use songbird::{tracks::TrackHandle, SongbirdKey};
 
 use super::{edit_message, Reply};
-use crate::error::{GeneralError::*, PlayError::*, VoiceError::*};
+use crate::{
+    error::{
+        General::{Argument, DiscordGet},
+        PlayCommand::Download,
+        Voice::{Handler, VoiceClientNotInit},
+    },
+    TrackHandleKey,
+};
 
 pub async fn play(ctx: Context, msg: Message) -> Result<()> {
     let Some(manager) = songbird::get(&ctx).await else {
@@ -15,7 +21,7 @@ pub async fn play(ctx: Context, msg: Message) -> Result<()> {
 
     let Some(guild) = msg.guild_id else {
         ctx.reply("faild to get guild", &msg).await;
-        return Err(VoiceClientNotInit.into());
+        return Err(DiscordGet.into());
     };
 
     let mut greet = ctx.reply("downloading for u", &msg).await;
@@ -28,13 +34,13 @@ pub async fn play(ctx: Context, msg: Message) -> Result<()> {
                 greet
                     .edit(ctx.http, edit_message("faild to download"))
                     .await?;
-                return Err(DownloadError.into());
+                return Err(Download.into());
             }
         } else {
             greet
                 .edit(ctx.http, edit_message("faild to download"))
                 .await?;
-            return Err(DownloadError.into());
+            return Err(Download.into());
         }
     } else if !msg.attachments.is_empty() {
         if let Ok(input) = msg.attachments[0].download().await {
@@ -43,27 +49,29 @@ pub async fn play(ctx: Context, msg: Message) -> Result<()> {
             greet
                 .edit(ctx.http, edit_message("faild to download"))
                 .await?;
-            return Err(DownloadError.into());
+            return Err(Download.into());
         }
     } else {
         greet
             .edit(ctx.http, edit_message("u dont say wat i play"))
             .await?;
-        return Err(ArgumentError.into());
+        return Err(Argument.into());
     };
 
     if let Some(handler) = manager.get(guild) {
         let mut handler = handler.lock().await;
-        handler.play_only_input(input.into());
+        let track = handler.play_only_input(input.into());
 
-        // let global_track = ctx.data.write().await;
-        // global_track.clear();
-        // global_track.insert::<TrackHandle>(track);
+        let mut global_track = ctx.data.write().await;
+        global_track.clear();
+        global_track.insert::<TrackHandleKey>(track);
 
-        ctx.reply("playing for u!", &msg).await;
+        greet.edit(ctx.http, edit_message("playing for u!")).await?;
         Ok(())
     } else {
-        ctx.reply("faild to play", &msg).await;
-        return Err(CommandFailed.into());
+        greet
+            .edit(ctx.http, edit_message("faild to get voice handler"))
+            .await?;
+        Err(Handler.into())
     }
 }

@@ -1,7 +1,10 @@
 use anyhow::Result;
 use serenity::all::{ChannelType, Context, GuildChannel, Message};
 
-use crate::error::{GeneralError::*, VoiceError::*};
+use crate::error::{
+    General::{CommandFailed, CommandRequirement, DiscordGet},
+    Voice::Manager,
+};
 
 use super::Reply;
 
@@ -11,11 +14,11 @@ pub async fn join(ctx: Context, msg: Message) -> Result<()> {
             channels
         } else {
             ctx.reply("faild to get channels", &msg).await;
-            return Err(DiscordGetError.into());
+            return Err(DiscordGet.into());
         }
     } else {
         ctx.reply("faild to get guild", &msg).await;
-        return Err(DiscordGetError.into());
+        return Err(DiscordGet.into());
     };
 
     let channel = channel
@@ -37,7 +40,7 @@ pub async fn join(ctx: Context, msg: Message) -> Result<()> {
 
     if channel.is_empty() {
         ctx.reply("u arent in a vc", &msg).await;
-        return Err(CommandRequirementError.into());
+        return Err(CommandRequirement.into());
     }
 
     let channel = channel[0];
@@ -45,7 +48,7 @@ pub async fn join(ctx: Context, msg: Message) -> Result<()> {
     if let Some(manager) = songbird::get(&ctx).await {
         let Some(guild) = msg.guild_id else {
             ctx.reply("faild to get guild", &msg).await;
-            return Err(DiscordGetError.into());
+            return Err(DiscordGet.into());
         };
 
         if manager.join(guild, channel.id).await.is_ok() {
@@ -57,6 +60,6 @@ pub async fn join(ctx: Context, msg: Message) -> Result<()> {
         }
     } else {
         ctx.reply("voice manager failed", &msg).await;
-        Err(ManagerError.into())
+        Err(Manager.into())
     }
 }

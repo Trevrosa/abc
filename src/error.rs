@@ -1,31 +1,31 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum VoiceError {
+pub enum Voice {
     #[error("VoiceClientNotInit")]
     VoiceClientNotInit,
-    #[error("HandlerError")]
-    HandlerError,
-    #[error("ManagerError")]
-    ManagerError,
+    #[error("Handler")]
+    Handler,
+    #[error("Manager")]
+    Manager,
 }
 
 #[derive(Error, Debug)]
-pub enum PlayError {
-    #[error("DownloadError")]
-    DownloadError,
-    #[error("NoMediaError")]
-    NoMediaError,
+pub enum PlayCommand {
+    #[error("Download")]
+    Download,
+    #[error("NoMedia")]
+    NoMedia,
 }
 
 #[derive(Error, Debug)]
-pub enum GeneralError {
+pub enum General {
     #[error("CommandFailed")]
     CommandFailed,
-    #[error("ArgumentError")]
-    ArgumentError,
-    #[error("DiscordGetError")]
-    DiscordGetError,
-    #[error("CommandRequirementError")]
-    CommandRequirementError,
+    #[error("Argument")]
+    Argument,
+    #[error("DiscordGet")]
+    DiscordGet,
+    #[error("CommandRequirement")]
+    CommandRequirement,
 }

@@ -27,7 +27,10 @@ impl EventHandler for Listener {
             "join" => commands::join(ctx, msg).await,
             "leave" => commands::leave(ctx, msg).await,
             "play" => commands::play(ctx, msg).await,
-            "stop" => commands::stop(ctx, msg).await,
+            "pause" => commands::pause(ctx, msg).await,
+            "resume" => commands::resume(ctx, msg).await,
+            "status" => commands::status(ctx, msg).await,
+            "loop" => commands::set_loop(ctx, msg).await,
             &_ => Ok(()),
         };
     }

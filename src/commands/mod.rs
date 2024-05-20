@@ -14,12 +14,17 @@ pub use leave::leave;
 mod play;
 pub use play::play;
 
-mod start;
-pub use start::start;
+mod resume;
+pub use resume::resume;
 
-mod stop;
-pub use stop::stop;
-use thiserror::Error;
+mod pause;
+pub use pause::pause;
+
+mod set_loop;
+pub use set_loop::set_loop;
+
+mod status;
+pub use status::status;
 
 /// # Panics
 /// will panic if message not sent
@@ -34,7 +39,7 @@ pub trait Reply {
 
 impl Reply for Context {
     fn reply(&self, content: &str, msg: &Message) -> impl Future<Output = Message> {
-        reply(content, &self, msg)
+        reply(content, self, msg)
     }
 }
 
