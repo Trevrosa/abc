@@ -3,7 +3,7 @@ use serenity::{
     async_trait,
 };
 
-use crate::commands;
+use crate::commands::{self, Reply};
 
 #[derive(Debug)]
 pub struct Handler;
@@ -18,6 +18,15 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
+        if msg.is_private() && !msg.is_own(&ctx.cache) {
+            if msg.author.name == "devon03747" {
+                ctx.reply("wasup boss", &msg).await;
+            } else {
+                ctx.reply("im busy working", &msg).await;
+            }
+            return;
+        }
+
         if !msg.content.starts_with('`') {
             return;
         }

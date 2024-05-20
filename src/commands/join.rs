@@ -39,7 +39,7 @@ pub async fn join(ctx: Context, msg: Message) {
 
     let channel = channel[0];
 
-    if let Some(manager) = songbird::get(&ctx).await {
+    if let Some(manager) = songbird::get(&ctx).await.clone() {
         let Some(guild) = msg.guild_id else {
             ctx.reply("faild to get guild", &msg).await;
             return;

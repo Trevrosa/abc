@@ -3,7 +3,7 @@ use serenity::all::{Context, Message};
 use super::Reply;
 
 pub async fn leave(ctx: Context, msg: Message) {
-    let Some(manager) = songbird::get(&ctx).await else {
+    let Some(manager) = songbird::get(&ctx).await.clone() else {
         ctx.reply("voice client not init", &msg).await;
         return;
     };

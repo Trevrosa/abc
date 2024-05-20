@@ -4,15 +4,15 @@ use super::{edit_message, Reply};
 use crate::TrackHandleKey;
 
 pub async fn play(ctx: Context, msg: Message) {
-    let global_track = ctx.data.read().await;
-    let global_track = global_track.get::<TrackHandleKey>();
+    // let global_track = ctx.data.read().await;
+    // let global_track = global_track.get::<TrackHandleKey>();
 
-    if global_track.is_some() {
-        let mut global_track = ctx.data.write().await;
-        global_track.clear();
-    }
+    // if global_track.is_some() {
+    //     let mut global_track = ctx.data.write().await;
+    //     global_track.clear();
+    // }
 
-    let Some(manager) = songbird::get(&ctx).await else {
+    let Some(manager) = songbird::get(&ctx).await.clone() else {
         ctx.reply("voice client not init", &msg).await;
         return;
     };
@@ -70,11 +70,10 @@ pub async fn play(ctx: Context, msg: Message) {
             .edit(ctx.http, edit_message("playing for u!"))
             .await
             .unwrap();
-        // track.add_event(Event::Track(TrackEvent::End), VoiceHandler);
 
         let mut global_track = ctx.data.write().await;
         global_track.clear();
-        global_track.insert::<TrackHandleKey>(track);
+        global_track.insert::<TrackHandleKey>(track.clone());
     } else {
         greet
             .edit(ctx.http, edit_message("faild to get voice handler"))
