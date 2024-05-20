@@ -3,25 +3,28 @@ use serenity::all::{Context, Message};
 
 use super::{edit_message, Reply};
 use crate::{
-    error::{
-        General::{Argument, DiscordGet},
-        PlayCommand::Download,
-        Voice::{Handler, VoiceClientNotInit},
-    },
     TrackHandleKey,
 };
 
-pub async fn play(ctx: Context, msg: Message) -> Result<()> {
+pub async fn play(ctx: Context, msg: Message) {
+    let global_track = ctx.data.read().await;
+    let global_track = global_track.get::<TrackHandleKey>();
+
+    if global_track.is_some() {
+        let mut global_track = ctx.data.write().await;
+        global_track.clear();
+    }
+
     let Some(manager) = songbird::get(&ctx).await else {
         ctx.reply("voice client not init", &msg).await;
-        return Err(VoiceClientNotInit.into());
+        return;
     };
 
     let media = msg.content.trim().split(' ').collect::<Vec<&str>>();
 
     let Some(guild) = msg.guild_id else {
         ctx.reply("faild to get guild", &msg).await;
-        return Err(DiscordGet.into());
+        return;
     };
 
     let mut greet = ctx.reply("downloading for u", &msg).await;
@@ -33,14 +36,14 @@ pub async fn play(ctx: Context, msg: Message) -> Result<()> {
             } else {
                 greet
                     .edit(ctx.http, edit_message("faild to download"))
-                    .await?;
-                return Err(Download.into());
+                    .await.unwrap();
+                return;
             }
         } else {
             greet
                 .edit(ctx.http, edit_message("faild to download"))
-                .await?;
-            return Err(Download.into());
+                .await.unwrap();
+            return;
         }
     } else if !msg.attachments.is_empty() {
         if let Ok(input) = msg.attachments[0].download().await {
@@ -48,30 +51,29 @@ pub async fn play(ctx: Context, msg: Message) -> Result<()> {
         } else {
             greet
                 .edit(ctx.http, edit_message("faild to download"))
-                .await?;
-            return Err(Download.into());
+                .await.unwrap();
+            return;
         }
     } else {
         greet
             .edit(ctx.http, edit_message("u dont say wat i play"))
-            .await?;
-        return Err(Argument.into());
+            .await.unwrap();
+        return;
     };
 
     if let Some(handler) = manager.get(guild) {
         let mut handler = handler.lock().await;
         let track = handler.play_only_input(input.into());
 
+        greet.edit(ctx.http, edit_message("playing for u!")).await.unwrap();
+        // track.add_event(Event::Track(TrackEvent::End), VoiceHandler);
+
         let mut global_track = ctx.data.write().await;
         global_track.clear();
         global_track.insert::<TrackHandleKey>(track);
-
-        greet.edit(ctx.http, edit_message("playing for u!")).await?;
-        Ok(())
     } else {
         greet
             .edit(ctx.http, edit_message("faild to get voice handler"))
-            .await?;
-        Err(Handler.into())
+            .await.unwrap();
     }
 }

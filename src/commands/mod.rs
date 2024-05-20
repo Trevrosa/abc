@@ -11,20 +11,7 @@ pub use test::test;
 mod leave;
 pub use leave::leave;
 
-mod play;
-pub use play::play;
-
-mod resume;
-pub use resume::resume;
-
-mod pause;
-pub use pause::pause;
-
-mod set_loop;
-pub use set_loop::set_loop;
-
-mod status;
-pub use status::status;
+pub mod voice;
 
 /// # Panics
 /// will panic if message not sent
@@ -43,6 +30,6 @@ impl Reply for Context {
     }
 }
 
-fn edit_message(content: &str) -> EditMessage {
+pub fn edit_message(content: &str) -> EditMessage {
     EditMessage::new().content(content)
 }
