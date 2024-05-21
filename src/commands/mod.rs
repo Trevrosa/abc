@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use reqwest::Response;
+use bytes::Bytes;
 use serenity::all::{Context, CreateMessage, EditMessage, Message};
 
 mod join;
@@ -38,20 +38,20 @@ pub fn edit_message(content: &str) -> EditMessage {
 }
 
 /// `.unwrap()` here should never panic, since the `Client` should have been initialized in `main`
-async fn get(ctx: &Context, url: &str) -> Result<Response, reqwest::Error> {
+async fn get(ctx: &Context, url: &str) -> Result<Bytes, reqwest::Error> {
     let global = ctx.data.read().await;
     let client = global.get::<HttpClientKey>().unwrap();
 
-    let request = client.get(url).build().unwrap();
-    client.execute(request).await
+    let request = client.get(url).build()?;
+    client.execute(request).await?.bytes().await
 }
 
 pub trait Get {
-    fn get(&self, url: &str) -> impl Future<Output = Result<Response, reqwest::Error>>;
+    fn get(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>>;
 }
 
 impl Get for Context {
-    fn get(&self, url: &str) -> impl Future<Output = Result<Response, reqwest::Error>> {
+    fn get(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>> {
         get(self, url)
     }
 }

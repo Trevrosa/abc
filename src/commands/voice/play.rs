@@ -1,5 +1,6 @@
 use bytes::Bytes;
 use serenity::all::{ChannelType, Context, Message};
+use songbird::tracks::LoopState;
 
 use super::{edit_message, Reply};
 use crate::{commands::Get, TrackHandleKey};
@@ -10,7 +11,7 @@ pub async fn play(ctx: Context, msg: Message) {
         return;
     };
 
-    let media = msg.content.trim().split(' ').collect::<Vec<&str>>();
+    let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
 
     let Some(guild) = msg.guild_id else {
         ctx.reply("faild to get guild", &msg).await;
@@ -19,17 +20,10 @@ pub async fn play(ctx: Context, msg: Message) {
 
     let mut greet = ctx.reply("downloading for u", &msg).await;
 
-    let input: Bytes = if media.len() == 2 {
-        if let Ok(resp) = ctx.get(media[1]).await {
-            if let Ok(bytes) = resp.bytes().await {
-                bytes
-            } else {
-                greet
-                    .edit(ctx.http, edit_message("faild to decode"))
-                    .await
-                    .unwrap();
-                return;
-            }
+    let input: Bytes = if args.len() == 2 {
+        // songbird::input::YoutubeDl::new(ctx.data.read().await.get::<HttpClientKey>().cloned().unwrap(), args[1].to_string()).into()
+        if let Ok(resp) = ctx.get(args[1]).await {
+            resp
         } else {
             greet
                 .edit(ctx.http, edit_message("faild to download"))
@@ -38,7 +32,7 @@ pub async fn play(ctx: Context, msg: Message) {
             return;
         }
     } else if !msg.attachments.is_empty() {
-        if let Ok(input) = msg.attachments[0].download().await {
+        if let Ok(input) = ctx.get(&msg.attachments[0].url).await {
             input.into()
         } else {
             greet
@@ -62,6 +56,7 @@ pub async fn play(ctx: Context, msg: Message) {
 
     if let Some(handler) = manager.get(guild) {
         let mut handler = handler.lock().await;
+        // join vc if not already in one
         if handler.current_connection().is_none() {
             let channel = channels.iter().find_map(|c| {
                 let c = c.1;
@@ -87,11 +82,19 @@ pub async fn play(ctx: Context, msg: Message) {
             };
 
             if handler.join(channel.id).await.is_err() {
-                ctx.reply("faild to join u", &msg);
+                ctx.reply("faild to join u", &msg).await;
                 return;
             };
         }
         let track = handler.play_only_input(input.into());
+
+        let global = ctx.data.read().await;
+
+        if let Some(old_track) = global.get::<TrackHandleKey>() {
+            if old_track.get_info().await.unwrap().loops == LoopState::Infinite {
+                track.enable_loop().unwrap();
+            }
+        }
 
         ctx.data.write().await.insert::<TrackHandleKey>(track);
 

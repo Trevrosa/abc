@@ -45,13 +45,3 @@ impl EventHandler for Handler {
         };
     }
 }
-
-// #[derive(Debug)]
-// pub struct VoiceHandler;
-
-// #[async_trait]
-// impl songbird::EventHandler for VoiceHandler {
-//     async fn act(&self, ctx: &EventContext) {
-
-//     }
-// }
