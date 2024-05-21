@@ -25,12 +25,12 @@ pub async fn play(ctx: Context, msg: Message) {
     let mut greet = ctx.reply("downloading for u", &msg).await;
 
     let input: Bytes = if args.len() == 2 {
-        if Path::new("current_track.webm").exists() {
-            remove_file("current_track.webm").unwrap();
+        if Path::new("current_track").exists() {
+            remove_file("current_track").unwrap();
         }
         
         let downloader = Command::new("/usr/bin/yt-dlp")
-            .args(vec![args[1], "-o", "current_track.webm"])
+            .args(vec![args[1], "-o", "current_track", "-f", "ba"])  // ba = best audio
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn();
@@ -39,7 +39,7 @@ pub async fn play(ctx: Context, msg: Message) {
             downloader.unwrap().wait().unwrap();
             let mut bytes: Vec<u8> = Vec::new();
 
-            if File::open("current_track.webm")
+            if File::open("current_track")
                 .unwrap()
                 .read_to_end(&mut bytes)
                 .is_err()
