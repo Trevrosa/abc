@@ -1,9 +1,13 @@
+use std::{
+    fs::{remove_file, File}, io::Read, path::Path, process::{Command, Stdio}
+};
+
 use bytes::Bytes;
 use serenity::all::{ChannelType, Context, Message};
 use songbird::tracks::LoopState;
 
 use super::{edit_message, Reply};
-use crate::{commands::Get, TrackHandleKey};
+use crate::{commands::Download, TrackHandleKey};
 
 pub async fn play(ctx: Context, msg: Message) {
     let Some(manager) = songbird::get(&ctx).await.clone() else {
@@ -21,8 +25,34 @@ pub async fn play(ctx: Context, msg: Message) {
     let mut greet = ctx.reply("downloading for u", &msg).await;
 
     let input: Bytes = if args.len() == 2 {
-        // songbird::input::YoutubeDl::new(ctx.data.read().await.get::<HttpClientKey>().cloned().unwrap(), args[1].to_string()).into()
-        if let Ok(resp) = ctx.get(args[1]).await {
+        if Path::new("current_track.webm").exists() {
+            remove_file("current_track.webm").unwrap();
+        }
+        
+        let downloader = Command::new("/usr/bin/yt-dlp")
+            .args(vec![args[1], "-o", "current_track.webm"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn();
+
+        if downloader.is_ok() {
+            downloader.unwrap().wait().unwrap();
+            let mut bytes: Vec<u8> = Vec::new();
+
+            if File::open("current_track.webm")
+                .unwrap()
+                .read_to_end(&mut bytes)
+                .is_err()
+            {
+                greet
+                    .edit(ctx.http, edit_message("faild to read file"))
+                    .await
+                    .unwrap();
+                return;
+            }
+
+            bytes.into()
+        } else if let Ok(resp) = ctx.download(args[1]).await {
             resp
         } else {
             greet
@@ -32,8 +62,8 @@ pub async fn play(ctx: Context, msg: Message) {
             return;
         }
     } else if !msg.attachments.is_empty() {
-        if let Ok(input) = ctx.get(&msg.attachments[0].url).await {
-            input.into()
+        if let Ok(input) = ctx.download(&msg.attachments[0].url).await {
+            input
         } else {
             greet
                 .edit(ctx.http, edit_message("faild to download"))
@@ -54,9 +84,41 @@ pub async fn play(ctx: Context, msg: Message) {
         return;
     };
 
+    // join vc if not already in one
+    if manager.get(guild).is_none() {
+        let channel = channels.iter().find_map(|c| {
+            let c = c.1;
+
+            if c.kind != ChannelType::Voice {
+                return None;
+            }
+
+            let Ok(members) = c.members(&ctx.cache) else {
+                return None;
+            };
+
+            if members.iter().any(|m| m.user == msg.author) {
+                Some(c)
+            } else {
+                None
+            }
+        });
+
+        let Some(channel) = channel else {
+            ctx.reply("u arent in a vc", &msg).await;
+            return;
+        };
+
+        if manager.join(guild, channel.id).await.is_err() {
+            ctx.reply("faild to join u", &msg).await;
+            return;
+        };
+    }
+
     if let Some(handler) = manager.get(guild) {
         let mut handler = handler.lock().await;
-        // join vc if not already in one
+
+        // join vc if not already in one 2
         if handler.current_connection().is_none() {
             let channel = channels.iter().find_map(|c| {
                 let c = c.1;
@@ -86,13 +148,21 @@ pub async fn play(ctx: Context, msg: Message) {
                 return;
             };
         }
+
         let track = handler.play_only_input(input.into());
 
-        let global = ctx.data.read().await;
+        {
+            let global = ctx.data.read().await;
 
-        if let Some(old_track) = global.get::<TrackHandleKey>() {
-            if old_track.get_info().await.unwrap().loops == LoopState::Infinite {
-                track.enable_loop().unwrap();
+            if let Some(old_track) = global.get::<TrackHandleKey>() {
+                if let Ok(track_info) = old_track.get_info().await {
+                    if track_info.loops == LoopState::Infinite {
+                        track.enable_loop().unwrap();
+                    }
+                } else {
+                    drop(global); // unlock the typemap
+                    ctx.data.write().await.remove::<TrackHandleKey>();
+                }
             }
         }
 

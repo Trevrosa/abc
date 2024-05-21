@@ -1,9 +1,15 @@
 #![warn(clippy::pedantic)]
-#![allow(clippy::missing_errors_doc, clippy::missing_panics_doc)]
+#![allow(
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::too_many_lines
+)]
 
 pub mod commands;
 // mod ytdl;
 mod handlers;
+
+use std::path::Path;
 
 use anyhow::Result;
 use handlers::Handler;
@@ -28,6 +34,9 @@ async fn main() -> Result<()> {
     //     .with_max_level(tracing::level_filters::LevelFilter::DEBUG)
     //     .without_time()
     //     .init();
+
+    assert!(Path::new("/usr/bin/yt-dlp").exists());
+
     tracing_subscriber::fmt().without_time().init();
 
     let token: &str = include_str!("../token");
@@ -35,6 +44,7 @@ async fn main() -> Result<()> {
 
     let mut client: Client = Client::builder(token, intents)
         .event_handler(Handler)
+        .type_map(TypeMap::new())
         .type_map_insert::<HttpClientKey>(reqwest::Client::new())
         .register_songbird()
         .await?;

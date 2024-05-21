@@ -37,8 +37,8 @@ pub fn edit_message(content: &str) -> EditMessage {
     EditMessage::new().content(content)
 }
 
-/// `.unwrap()` here should never panic, since the `Client` should have been initialized in `main`
-async fn get(ctx: &Context, url: &str) -> Result<Bytes, reqwest::Error> {
+/// `.unwrap()` here should never panic, since the `Client` should have been initialized already
+async fn download(ctx: &Context, url: &str) -> Result<Bytes, reqwest::Error> {
     let global = ctx.data.read().await;
     let client = global.get::<HttpClientKey>().unwrap();
 
@@ -46,12 +46,12 @@ async fn get(ctx: &Context, url: &str) -> Result<Bytes, reqwest::Error> {
     client.execute(request).await?.bytes().await
 }
 
-pub trait Get {
-    fn get(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>>;
+pub trait Download {
+    fn download(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>>;
 }
 
-impl Get for Context {
-    fn get(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>> {
-        get(self, url)
+impl Download for Context {
+    fn download(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>> {
+        download(self, url)
     }
 }

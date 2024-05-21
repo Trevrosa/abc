@@ -22,7 +22,7 @@ impl EventHandler for Handler {
             if msg.author.name == "devon03747" {
                 ctx.reply("wasup boss", &msg).await;
             } else {
-                ctx.reply("im busy working", &msg).await;
+                ctx.reply("im busy", &msg).await;
             }
             return;
         }

@@ -5,14 +5,14 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
-async-trait = "0.1.80"
+# async-trait = "0.1.80"
 bytes = "1.6.0"
 reqwest = { version = "0.12.4", features = ["rustls-tls"], default-features = false }
 serde = { version = "1.0.202", features = ["derive"] }
 serenity = { version = "0.12.1", features = ["client", "voice"] }
 songbird = "0.4.1"
 symphonia = { version = "0.5.4", features = ["all", "opt-simd"] }
-symphonia-core = { version = "0.5.4", features = ["opt-simd"] }
+# symphonia-core = { version = "0.5.4", features = ["opt-simd"] }
 thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = ["rt-multi-thread", "macros"] }
 tracing = "0.1.40"
