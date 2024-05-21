@@ -1,9 +1,11 @@
+use std::ops::Deref;
+
 use serenity::all::{ChannelType, Context, GuildChannel, Message};
 
 use super::Reply;
 
 pub async fn join(ctx: Context, msg: Message) {
-    let channel = if let Some(guild) = msg.guild_id {
+    let channels = if let Some(guild) = msg.guild_id {
         if let Ok(channels) = guild.channels(&ctx).await {
             channels
         } else {
@@ -15,29 +17,24 @@ pub async fn join(ctx: Context, msg: Message) {
         return;
     };
 
-    let channel = channel
+    let channel = channels
         .iter()
-        .filter_map(|c| {
-            if let Ok(members) = c.1.members(&ctx.cache) {
-                if c.1.kind == ChannelType::Voice
-                    && members.iter().any(|m| m.user.id == msg.author.id)
-                {
-                    Some(c.1)
-                } else {
-                    None
-                }
-            } else {
-                None
+        .find_map(|c| {
+            let c = c.1;
+            let Ok(members) = c.members(&ctx.cache) else {
+                return None;
+            };
+            if !members.iter().any(|m| m.user == msg.author) {
+                return None;
             }
-        })
-        .collect::<Vec<&GuildChannel>>();
+            
+            Some(c)
+        });
 
-    if channel.is_empty() {
+    let Some(channel) = channel else {
         ctx.reply("u arent in a vc", &msg).await;
         return;
-    }
-
-    let channel = channel[0];
+    };
 
     if let Some(manager) = songbird::get(&ctx).await.clone() {
         let Some(guild) = msg.guild_id else {

@@ -1,4 +1,4 @@
-use std::future::Future;
+use std::{future::Future, sync::RwLockReadGuard};
 
 use serenity::all::{Context, CreateMessage, EditMessage, Message};
 
@@ -6,10 +6,13 @@ mod join;
 pub use join::join;
 
 mod test;
+use songbird::{tracks::TrackHandle, typemap::TypeMap};
 pub use test::test;
 
 mod leave;
 pub use leave::leave;
+
+use crate::TrackHandleKey;
 
 pub mod voice;
 

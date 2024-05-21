@@ -4,14 +4,14 @@ use super::Reply;
 use crate::TrackHandleKey;
 
 pub async fn resume(ctx: Context, msg: Message) {
-    let global_track = ctx.data.read().await;
+    let global = ctx.data.read().await;
 
-    if global_track.is_empty() {
+    if global.contains_key::<TrackHandleKey>() {
         ctx.reply("im not play anything", &msg).await;
         return;
     }
 
-    let Some(track) = global_track.get::<TrackHandleKey>().cloned() else {
+    let Some(track) = global.get::<TrackHandleKey>() else {
         return;
     };
 
