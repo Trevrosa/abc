@@ -15,6 +15,12 @@ impl TypeMapKey for TrackHandleKey {
     type Value = TrackHandle;
 }
 
+pub struct HttpClientKey;
+
+impl TypeMapKey for HttpClientKey {
+    type Value = reqwest::Client;
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // tracing_subscriber::fmt()
@@ -28,7 +34,7 @@ async fn main() -> Result<()> {
 
     let mut client: Client = Client::builder(token, intents)
         .event_handler(Handler)
-        .type_map(TypeMap::custom())
+        .type_map_insert::<HttpClientKey>(reqwest::Client::new())
         .register_songbird()
         .await?;
 
