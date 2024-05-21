@@ -1,5 +1,8 @@
 use std::{
-    fs::{remove_file, File}, io::Read, path::Path, process::{Command, Stdio}
+    fs::{remove_file, File},
+    io::Read,
+    path::Path,
+    process::{Command, Stdio},
 };
 
 use bytes::Bytes;
@@ -28,9 +31,9 @@ pub async fn play(ctx: Context, msg: Message) {
         if Path::new("current_track").exists() {
             remove_file("current_track").unwrap();
         }
-        
+
         let downloader = Command::new("/usr/bin/yt-dlp")
-            .args(vec![args[1], "-o", "current_track", "-f", "ba"])  // ba = best audio
+            .args(vec![args[1], "-o", "current_track", "-f", "ba"]) // ba = best audio
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn();
