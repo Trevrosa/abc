@@ -6,11 +6,7 @@ use std::{
 };
 
 use bytes::Bytes;
-use serenity::{
-    all::{ChannelType, Context, Message},
-    futures::StreamExt,
-};
-use songbird::tracks::LoopState;
+use serenity::all::{ChannelType, Context, Message};
 use tracing::info;
 
 use super::Utils;
@@ -39,7 +35,7 @@ pub async fn play(ctx: Context, msg: Message) {
         }
 
         let downloader = Command::new("/usr/bin/yt-dlp")
-            .args(vec![args[1], "-o", "current_track", "-f", "ba"]) // ba = best audio
+            .args(vec![args[1], "-o", "current_track", "-f", "ba*"]) // ba* = choose best quality audio format, maybe video
             .stdout(Stdio::piped())
             .stderr(stdout())
             .spawn();
@@ -65,7 +61,6 @@ pub async fn play(ctx: Context, msg: Message) {
             }
 
             if !downloader.wait().unwrap().success() {
-                ctx.edit_msg("faild to download", &mut greet).await;
                 return;
             }
 
@@ -100,29 +95,15 @@ pub async fn play(ctx: Context, msg: Message) {
             return;
         };
 
-        // unwraps should be safe here, url should be discord attachment; should have Content-Length header
-        let full_size: usize = response
-            .headers()
-            .get("Content-Length")
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .parse()
-            .unwrap();
+        info!("downloaded {} with reqwest", args[1]);
 
-        let mut stream = response.bytes_stream();
-        let mut bytes: Vec<u8> = Vec::new();
-
-        let mut i = 0;
-
-        while let Some(Ok(chunk)) = stream.next().await {
-            i += 1;
-            bytes.extend_from_slice(&chunk.slice(..));
-
-            ctx.edit_msg(&format!("{}.", greet.content), &mut greet).await;
+        if let Ok(bytes) = response.bytes().await {
+            bytes
+        } else {
+            ctx.edit_msg("faild to decode file", &mut greet).await;
+            drop(global);
+            return;
         }
-
-        bytes.into()
     } else {
         ctx.edit_msg("u dont say wat i play", &mut greet).await;
         return;
@@ -198,40 +179,8 @@ pub async fn play(ctx: Context, msg: Message) {
             };
         }
 
-        let global = ctx.data.try_read().unwrap();
-
-        if let Some(old_track) = global.get::<TrackHandleKey>() {
-            if !old_track
-                .get_info()
-                .await
-                .map_or(false, |t| t.loops == LoopState::Infinite)
-            {
-                drop(global);
-
-                let track = handler.play_only_input(input.into());
-                ctx.data.write().await.insert::<TrackHandleKey>(track);
-
-                ctx.edit_msg("playing for u!", &mut greet).await;
-                return;
-            }
-
-            let _ = old_track.stop();
-
-            drop(global);
-
-            let track = handler.play_only_input(input.into());
-            track.enable_loop().unwrap();
-            ctx.data.write().await.insert::<TrackHandleKey>(track);
-
-            ctx.edit_msg("playing for u!", &mut greet).await;
-            return;
-        }
-
-        drop(global);
-
         let track = handler.play_only_input(input.into());
         ctx.data.write().await.insert::<TrackHandleKey>(track);
-
         ctx.edit_msg("playing for u!", &mut greet).await;
     } else {
         ctx.edit_msg("faild to get voice handler", &mut greet).await;

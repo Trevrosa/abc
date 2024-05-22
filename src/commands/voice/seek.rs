@@ -25,9 +25,9 @@ pub async fn seek(ctx: Context, msg: Message) {
             return;
         };
 
-        if track.seek_async(Duration::from_secs(to_seek)).await.is_ok() {        
+        if track.seek_async(Duration::from_secs(to_seek)).await.is_ok() {
             ctx.reply(&format!("seekd to {to_seek} secs"), &msg).await;
-        } else {        
+        } else {
             ctx.reply("faild to seek", &msg).await;
         }
     } else {
