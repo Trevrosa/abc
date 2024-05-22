@@ -95,7 +95,7 @@ pub async fn play(ctx: Context, msg: Message) {
             return;
         };
 
-        info!("downloaded {} with reqwest", args[1]);
+        info!("downloaded {} with reqwest", &msg.attachments[0].url);
 
         if let Ok(bytes) = response.bytes().await {
             bytes
