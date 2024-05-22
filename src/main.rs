@@ -6,8 +6,8 @@
 )]
 
 pub mod commands;
-// mod ytdl;
 mod handlers;
+mod serenity_ctrlc;
 
 use std::path::Path;
 
@@ -48,6 +48,8 @@ async fn main() -> Result<()> {
         .type_map_insert::<HttpClientKey>(reqwest::Client::new())
         .register_songbird()
         .await?;
+
+    serenity_ctrlc::ctrlc(&client)?;
 
     client.start().await?;
 

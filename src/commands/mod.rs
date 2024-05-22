@@ -23,17 +23,32 @@ async fn reply(ctx: &Context, content: &str, msg: &Message) -> Message {
     msg.channel_id.send_message(&ctx, new_msg).await.unwrap()
 }
 
-pub trait Reply {
+pub trait Utils {
     fn reply(&self, content: &str, message: &Message) -> impl Future<Output = Message>;
+    fn download(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>>;
+    fn edit_msg(&self, content: &str, msg: &mut Message) -> impl Future<Output = ()>;
 }
 
-impl Reply for Context {
+impl Utils for Context {
     fn reply(&self, content: &str, msg: &Message) -> impl Future<Output = Message> {
         reply(self, content, msg)
     }
+
+    fn download(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>> {
+        download(self, url)
+    }
+
+    fn edit_msg(&self, content: &str, msg: &mut Message) -> impl Future<Output = ()> {
+        edit(self, content, msg)
+    }
 }
 
-pub fn edit_message(content: &str) -> EditMessage {
+/// will do nothing if errored
+async fn edit(ctx: &Context, content: &str, msg: &mut Message) {
+    let _ = msg.edit(&ctx.http, edit_message(content)).await;
+}
+
+fn edit_message(content: &str) -> EditMessage {
     EditMessage::new().content(content)
 }
 
@@ -44,14 +59,4 @@ async fn download(ctx: &Context, url: &str) -> Result<Bytes, reqwest::Error> {
 
     let request = client.get(url).build()?;
     client.execute(request).await?.bytes().await
-}
-
-pub trait Download {
-    fn download(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>>;
-}
-
-impl Download for Context {
-    fn download(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>> {
-        download(self, url)
-    }
 }

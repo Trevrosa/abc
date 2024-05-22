@@ -1,6 +1,6 @@
 use serenity::all::{Context, Message};
 
-use super::Reply;
+use super::Utils;
 
 pub async fn leave(ctx: Context, msg: Message) {
     let Some(manager) = songbird::get(&ctx).await.clone() else {

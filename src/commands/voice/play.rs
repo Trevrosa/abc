@@ -1,6 +1,6 @@
 use std::{
     fs::{remove_file, File},
-    io::Read,
+    io::{stdout, BufRead, BufReader, Read},
     path::Path,
     process::{Command, Stdio},
 };
@@ -8,9 +8,12 @@ use std::{
 use bytes::Bytes;
 use serenity::all::{ChannelType, Context, Message};
 use songbird::tracks::LoopState;
+use tracing::info;
 
-use super::{edit_message, Reply};
-use crate::{commands::Download, TrackHandleKey};
+use super::Utils;
+use crate::TrackHandleKey;
+
+// TODO: add progress incicator/bar
 
 pub async fn play(ctx: Context, msg: Message) {
     let Some(manager) = songbird::get(&ctx).await.clone() else {
@@ -34,12 +37,33 @@ pub async fn play(ctx: Context, msg: Message) {
 
         let downloader = Command::new("/usr/bin/yt-dlp")
             .args(vec![args[1], "-o", "current_track", "-f", "ba"]) // ba = best audio
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(stdout())
             .spawn();
 
-        if downloader.is_ok() {
-            downloader.unwrap().wait().unwrap();
+        if let Ok(mut downloader) = downloader {
+            {
+                let output = downloader.stdout.as_mut().unwrap();
+                let reader = BufReader::new(output);
+
+                for (i, chunk) in reader.lines().enumerate() {
+                    let new_msg = if i == 0 {
+                        format!("```{}```", chunk.unwrap().trim())
+                    } else {
+                        // should work since we put ``` already
+                        format!(
+                            "{}{}```",
+                            &greet.content.strip_suffix("```").unwrap(),
+                            chunk.unwrap().trim()
+                        )
+                    };
+                    ctx.edit_msg(&new_msg, &mut greet).await;
+                }
+            }
+
+            downloader.wait().unwrap();
+
+            info!("downloaded {} with yt-dlp", args[1]);
             let mut bytes: Vec<u8> = Vec::new();
 
             if File::open("current_track")
@@ -47,38 +71,28 @@ pub async fn play(ctx: Context, msg: Message) {
                 .read_to_end(&mut bytes)
                 .is_err()
             {
-                greet
-                    .edit(ctx.http, edit_message("faild to read file"))
-                    .await
-                    .unwrap();
+                ctx.edit_msg("faild to read file", &mut greet).await;
                 return;
             }
 
             bytes.into()
         } else if let Ok(resp) = ctx.download(args[1]).await {
+            info!("downloaded {}", args[1]);
             resp
         } else {
-            greet
-                .edit(ctx.http, edit_message("faild to download"))
-                .await
-                .unwrap();
+            ctx.edit_msg("faild to download", &mut greet).await;
             return;
         }
     } else if !msg.attachments.is_empty() {
         if let Ok(input) = ctx.download(&msg.attachments[0].url).await {
+            info!("downloaded {}", &msg.attachments[0].url);
             input
         } else {
-            greet
-                .edit(ctx.http, edit_message("faild to download"))
-                .await
-                .unwrap();
+            ctx.edit_msg("faild to download", &mut greet).await;
             return;
         }
     } else {
-        greet
-            .edit(ctx.http, edit_message("u dont say wat i play"))
-            .await
-            .unwrap();
+        ctx.edit_msg("u dont say wat i play", &mut greet).await;
         return;
     };
 
@@ -87,7 +101,7 @@ pub async fn play(ctx: Context, msg: Message) {
         return;
     };
 
-    // join vc if not already in one
+    // join vc if bot has never joined a vc on run
     if manager.get(guild).is_none() {
         let channel = channels.iter().find_map(|c| {
             let c = c.1;
@@ -121,7 +135,7 @@ pub async fn play(ctx: Context, msg: Message) {
     if let Some(handler) = manager.get(guild) {
         let mut handler = handler.lock().await;
 
-        // join vc if not already in one 2
+        // join vc if
         if handler.current_connection().is_none() {
             let channel = channels.iter().find_map(|c| {
                 let c = c.1;
@@ -171,14 +185,8 @@ pub async fn play(ctx: Context, msg: Message) {
 
         ctx.data.write().await.insert::<TrackHandleKey>(track);
 
-        greet
-            .edit(ctx.http, edit_message("playing for u!"))
-            .await
-            .unwrap();
+        ctx.edit_msg("playing for u!", &mut greet).await;
     } else {
-        greet
-            .edit(ctx.http, edit_message("faild to get voice handler"))
-            .await
-            .unwrap();
+        ctx.edit_msg("faild to get voice handler", &mut greet).await;
     }
 }

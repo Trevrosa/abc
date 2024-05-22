@@ -3,7 +3,9 @@ use songbird::tracks::LoopState;
 
 use crate::TrackHandleKey;
 
-use super::Reply;
+use super::Utils;
+
+// TODO: fix looping break
 
 pub async fn set_loop(ctx: Context, msg: Message) {
     let global = ctx.data.read().await;
@@ -13,6 +15,7 @@ pub async fn set_loop(ctx: Context, msg: Message) {
             ctx.reply("faild to loop", &msg).await;
             return;
         };
+
         let Ok(track_info) = track.get_info().await else {
             ctx.reply("im not play anything", &msg).await;
             return;

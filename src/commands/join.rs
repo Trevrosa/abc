@@ -1,6 +1,6 @@
 use serenity::all::{ChannelId, ChannelType, Context, Message};
 
-use super::Reply;
+use super::Utils;
 
 pub async fn join(ctx: Context, msg: Message) {
     let Some(guild) = msg.guild_id else {
