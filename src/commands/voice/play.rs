@@ -6,12 +6,15 @@ use std::{
 };
 
 use bytes::Bytes;
-use serenity::all::{ChannelType, Context, Message};
+use serenity::{
+    all::{ChannelType, Context, Message},
+    futures::StreamExt,
+};
 use songbird::tracks::LoopState;
 use tracing::info;
 
 use super::Utils;
-use crate::TrackHandleKey;
+use crate::{HttpClientKey, TrackHandleKey};
 
 // TODO: add progress incicator/bar
 
@@ -52,7 +55,7 @@ pub async fn play(ctx: Context, msg: Message) {
                     } else {
                         // should work since we put ``` already
                         format!(
-                            "{}{}```",
+                            "{}\n{}```",
                             &greet.content.strip_suffix("```").unwrap(),
                             chunk.unwrap().trim()
                         )
@@ -61,7 +64,10 @@ pub async fn play(ctx: Context, msg: Message) {
                 }
             }
 
-            downloader.wait().unwrap();
+            if !downloader.wait().unwrap().success() {
+                ctx.edit_msg("faild to download", &mut greet).await;
+                return;
+            }
 
             info!("downloaded {} with yt-dlp", args[1]);
             let mut bytes: Vec<u8> = Vec::new();
@@ -76,21 +82,47 @@ pub async fn play(ctx: Context, msg: Message) {
             }
 
             bytes.into()
-        } else if let Ok(resp) = ctx.download(args[1]).await {
-            info!("downloaded {}", args[1]);
-            resp
         } else {
-            ctx.edit_msg("faild to download", &mut greet).await;
+            ctx.edit_msg("faild to start download", &mut greet).await;
             return;
         }
     } else if !msg.attachments.is_empty() {
-        if let Ok(input) = ctx.download(&msg.attachments[0].url).await {
-            info!("downloaded {}", &msg.attachments[0].url);
-            input
-        } else {
-            ctx.edit_msg("faild to download", &mut greet).await;
+        let global = ctx.data.try_read().unwrap();
+        let client = global.get::<HttpClientKey>().unwrap();
+
+        let Ok(request) = client.get(&msg.attachments[0].url).build() else {
+            drop(global);
             return;
+        };
+
+        let Ok(response) = client.execute(request).await else {
+            drop(global);
+            return;
+        };
+
+        // unwraps should be safe here, url should be discord attachment; should have Content-Length header
+        let full_size: usize = response
+            .headers()
+            .get("Content-Length")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+
+        let mut stream = response.bytes_stream();
+        let mut bytes: Vec<u8> = Vec::new();
+
+        let mut i = 0;
+
+        while let Some(Ok(chunk)) = stream.next().await {
+            i += 1;
+            bytes.extend_from_slice(&chunk.slice(..));
+
+            ctx.edit_msg(&format!("{}.", greet.content), &mut greet).await;
         }
+
+        bytes.into()
     } else {
         ctx.edit_msg("u dont say wat i play", &mut greet).await;
         return;
@@ -135,7 +167,7 @@ pub async fn play(ctx: Context, msg: Message) {
     if let Some(handler) = manager.get(guild) {
         let mut handler = handler.lock().await;
 
-        // join vc if
+        // join vc if bot is not currently in a vc
         if handler.current_connection().is_none() {
             let channel = channels.iter().find_map(|c| {
                 let c = c.1;
@@ -166,23 +198,38 @@ pub async fn play(ctx: Context, msg: Message) {
             };
         }
 
-        let track = handler.play_only_input(input.into());
+        let global = ctx.data.try_read().unwrap();
 
-        {
-            let global = ctx.data.read().await;
+        if let Some(old_track) = global.get::<TrackHandleKey>() {
+            if !old_track
+                .get_info()
+                .await
+                .map_or(false, |t| t.loops == LoopState::Infinite)
+            {
+                drop(global);
 
-            if let Some(old_track) = global.get::<TrackHandleKey>() {
-                if let Ok(track_info) = old_track.get_info().await {
-                    if track_info.loops == LoopState::Infinite {
-                        track.enable_loop().unwrap();
-                    }
-                } else {
-                    drop(global); // unlock the typemap
-                    ctx.data.write().await.remove::<TrackHandleKey>();
-                }
+                let track = handler.play_only_input(input.into());
+                ctx.data.write().await.insert::<TrackHandleKey>(track);
+
+                ctx.edit_msg("playing for u!", &mut greet).await;
+                return;
             }
+
+            let _ = old_track.stop();
+
+            drop(global);
+
+            let track = handler.play_only_input(input.into());
+            track.enable_loop().unwrap();
+            ctx.data.write().await.insert::<TrackHandleKey>(track);
+
+            ctx.edit_msg("playing for u!", &mut greet).await;
+            return;
         }
 
+        drop(global);
+
+        let track = handler.play_only_input(input.into());
         ctx.data.write().await.insert::<TrackHandleKey>(track);
 
         ctx.edit_msg("playing for u!", &mut greet).await;

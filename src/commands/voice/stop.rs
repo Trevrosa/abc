@@ -1,11 +1,10 @@
 use serenity::all::{Context, Message};
 
+use super::Utils;
 use crate::TrackHandleKey;
 
-use super::Utils;
-
 pub async fn stop(ctx: Context, msg: Message) {
-    let global = ctx.data.read().await;
+    let global = ctx.data.try_read().unwrap();
     if global.contains_key::<TrackHandleKey>() {
         let Some(track) = global.get::<TrackHandleKey>().cloned() else {
             ctx.reply("faild to stop", &msg).await;

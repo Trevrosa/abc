@@ -1,14 +1,12 @@
 use serenity::all::{Context, Message};
 use songbird::tracks::LoopState;
 
-use crate::TrackHandleKey;
 
 use super::Utils;
-
-// TODO: fix looping break
+use crate::TrackHandleKey;
 
 pub async fn set_loop(ctx: Context, msg: Message) {
-    let global = ctx.data.read().await;
+    let global = ctx.data.try_read().unwrap();
 
     if global.contains_key::<TrackHandleKey>() {
         let Some(track) = global.get::<TrackHandleKey>() else {

@@ -16,4 +16,7 @@ pub use status::status;
 mod stop;
 pub use stop::stop;
 
+mod seek;
+pub use seek::seek;
+
 pub use super::Utils;

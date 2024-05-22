@@ -1,6 +1,5 @@
 use std::future::Future;
 
-use bytes::Bytes;
 use serenity::all::{Context, CreateMessage, EditMessage, Message};
 
 mod join;
@@ -11,8 +10,6 @@ pub use test::test;
 
 mod leave;
 pub use leave::leave;
-
-use crate::HttpClientKey;
 
 pub mod voice;
 
@@ -25,17 +22,12 @@ async fn reply(ctx: &Context, content: &str, msg: &Message) -> Message {
 
 pub trait Utils {
     fn reply(&self, content: &str, message: &Message) -> impl Future<Output = Message>;
-    fn download(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>>;
     fn edit_msg(&self, content: &str, msg: &mut Message) -> impl Future<Output = ()>;
 }
 
 impl Utils for Context {
     fn reply(&self, content: &str, msg: &Message) -> impl Future<Output = Message> {
         reply(self, content, msg)
-    }
-
-    fn download(&self, url: &str) -> impl Future<Output = Result<Bytes, reqwest::Error>> {
-        download(self, url)
     }
 
     fn edit_msg(&self, content: &str, msg: &mut Message) -> impl Future<Output = ()> {
@@ -50,13 +42,4 @@ async fn edit(ctx: &Context, content: &str, msg: &mut Message) {
 
 fn edit_message(content: &str) -> EditMessage {
     EditMessage::new().content(content)
-}
-
-/// `.unwrap()` here should never panic, since the `Client` should have been initialized already
-async fn download(ctx: &Context, url: &str) -> Result<Bytes, reqwest::Error> {
-    let global = ctx.data.read().await;
-    let client = global.get::<HttpClientKey>().unwrap();
-
-    let request = client.get(url).build()?;
-    client.execute(request).await?.bytes().await
 }

@@ -41,6 +41,7 @@ impl EventHandler for Handler {
             "status" => commands::voice::status(ctx, msg).await,
             "loop" => commands::voice::set_loop(ctx, msg).await,
             "stop" => commands::voice::stop(ctx, msg).await,
+            "seek" => commands::voice::seek(ctx, msg).await,
             &_ => (),
         };
     }
