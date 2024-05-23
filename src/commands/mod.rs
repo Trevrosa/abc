@@ -1,6 +1,8 @@
 use std::{collections::hash_map::Iter, future::Future};
 
-use serenity::all::{ChannelId, ChannelType, Context, CreateMessage, EditMessage, GuildChannel, Message, User};
+use serenity::all::{
+    ChannelId, ChannelType, Context, CreateMessage, EditMessage, GuildChannel, Message, User,
+};
 
 mod join;
 pub use join::join;
@@ -16,7 +18,12 @@ pub mod voice;
 pub trait Utils {
     fn reply(&self, content: &str, message: &Message) -> impl Future<Output = Message>;
     fn edit_msg(&self, content: &str, msg: &mut Message) -> impl Future<Output = ()>;
-    fn find_user_channel<'a>(&self, user: &User, kind: ChannelType, channels: &'a mut Iter<ChannelId, GuildChannel>) -> Option<&'a GuildChannel>;
+    fn find_user_channel<'a>(
+        &self,
+        user: &User,
+        kind: ChannelType,
+        channels: &'a mut Iter<ChannelId, GuildChannel>,
+    ) -> Option<&'a GuildChannel>;
 }
 
 impl Utils for Context {
@@ -28,7 +35,12 @@ impl Utils for Context {
         edit(self, content, msg)
     }
 
-    fn find_user_channel<'a>(&self, user: &User, kind: ChannelType, channels: &'a mut Iter<ChannelId, GuildChannel>) -> Option<&'a GuildChannel> {
+    fn find_user_channel<'a>(
+        &self,
+        user: &User,
+        kind: ChannelType,
+        channels: &'a mut Iter<ChannelId, GuildChannel>,
+    ) -> Option<&'a GuildChannel> {
         find_user_channel(self, user, kind, channels)
     }
 }
@@ -49,7 +61,12 @@ fn edit_message(content: &str) -> EditMessage {
     EditMessage::new().content(content)
 }
 
-fn find_user_channel<'a>(ctx: &Context, user: &User, kind: ChannelType, channels: &'a mut Iter<ChannelId, GuildChannel>) -> Option<&'a GuildChannel> {
+fn find_user_channel<'a>(
+    ctx: &Context,
+    user: &User,
+    kind: ChannelType,
+    channels: &'a mut Iter<ChannelId, GuildChannel>,
+) -> Option<&'a GuildChannel> {
     channels.find_map(|c| {
         let c = c.1;
 

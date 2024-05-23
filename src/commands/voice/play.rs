@@ -116,7 +116,8 @@ pub async fn play(ctx: Context, msg: Message) {
 
     // join vc if bot has never joined a vc
     if manager.get(guild).is_none() {
-        let Some(channel) = ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels) else {
+        let Some(channel) = ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels)
+        else {
             ctx.reply("u arent in a vc", &msg).await;
             return;
         };
@@ -132,7 +133,9 @@ pub async fn play(ctx: Context, msg: Message) {
 
         // join vc if bot is not currently in a vc
         if handler.current_connection().is_none() {
-            let Some(channel) = ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels) else {
+            let Some(channel) =
+                ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels)
+            else {
                 ctx.reply("u arent in a vc", &msg).await;
                 return;
             };
