@@ -12,8 +12,6 @@ use tracing::info;
 use super::Utils;
 use crate::{HttpClientKey, TrackHandleKey};
 
-// TODO: add progress incicator/bar
-
 pub async fn play(ctx: Context, msg: Message) {
     let Some(manager) = songbird::get(&ctx).await.clone() else {
         ctx.reply("voice client not init", &msg).await;
@@ -61,6 +59,7 @@ pub async fn play(ctx: Context, msg: Message) {
             }
 
             if !downloader.wait().unwrap().success() {
+                ctx.edit_msg("download faild", &mut greet).await;
                 return;
             }
 
@@ -113,28 +112,11 @@ pub async fn play(ctx: Context, msg: Message) {
         ctx.reply("faild to get channels", &msg).await;
         return;
     };
+    let mut channels = channels.iter();
 
-    // join vc if bot has never joined a vc on run
+    // join vc if bot has never joined a vc
     if manager.get(guild).is_none() {
-        let channel = channels.iter().find_map(|c| {
-            let c = c.1;
-
-            if c.kind != ChannelType::Voice {
-                return None;
-            }
-
-            let Ok(members) = c.members(&ctx.cache) else {
-                return None;
-            };
-
-            if members.iter().any(|m| m.user == msg.author) {
-                Some(c)
-            } else {
-                None
-            }
-        });
-
-        let Some(channel) = channel else {
+        let Some(channel) = ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels) else {
             ctx.reply("u arent in a vc", &msg).await;
             return;
         };
@@ -150,25 +132,7 @@ pub async fn play(ctx: Context, msg: Message) {
 
         // join vc if bot is not currently in a vc
         if handler.current_connection().is_none() {
-            let channel = channels.iter().find_map(|c| {
-                let c = c.1;
-
-                if c.kind != ChannelType::Voice {
-                    return None;
-                }
-
-                let Ok(members) = c.members(&ctx.cache) else {
-                    return None;
-                };
-
-                if members.iter().any(|m| m.user == msg.author) {
-                    Some(c)
-                } else {
-                    None
-                }
-            });
-
-            let Some(channel) = channel else {
+            let Some(channel) = ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels) else {
                 ctx.reply("u arent in a vc", &msg).await;
                 return;
             };
@@ -180,6 +144,7 @@ pub async fn play(ctx: Context, msg: Message) {
         }
 
         let track = handler.play_only_input(input.into());
+
         ctx.data.write().await.insert::<TrackHandleKey>(track);
         ctx.edit_msg("playing for u!", &mut greet).await;
     } else {
