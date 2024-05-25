@@ -9,7 +9,7 @@ use bytes::Bytes;
 use serenity::all::{ChannelType, Context, Message};
 use tracing::info;
 
-use super::Utils;
+use crate::utils::context::Ext;
 use crate::{HttpClientKey, TrackHandleKey};
 
 pub async fn play(ctx: Context, msg: Message) {
@@ -33,7 +33,8 @@ pub async fn play(ctx: Context, msg: Message) {
         }
 
         let downloader = Command::new("/usr/bin/yt-dlp")
-            .args(vec![args[1], "-o", "current_track", "-f", "ba*"]) // ba* = choose best quality audio format, maybe video
+            // ba* = choose best quality format with audio, which might be video
+            .args([args[1], "-o", "current_track", "-f", "ba*"])
             .stdout(Stdio::piped())
             .stderr(stdout())
             .spawn();
@@ -54,7 +55,7 @@ pub async fn play(ctx: Context, msg: Message) {
                             chunk.unwrap().trim()
                         )
                     };
-                    ctx.edit_msg(&new_msg, &mut greet).await;
+                    ctx.edit_msg(new_msg, &mut greet).await;
                 }
             }
 

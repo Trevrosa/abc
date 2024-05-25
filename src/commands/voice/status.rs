@@ -1,6 +1,6 @@
 use serenity::all::{Context, Message};
 
-use super::Utils;
+use crate::utils::context::Ext;
 use crate::TrackHandleKey;
 
 pub async fn status(ctx: Context, msg: Message) {
@@ -11,11 +11,8 @@ pub async fn status(ctx: Context, msg: Message) {
             return;
         };
 
-        ctx.reply(
-            &format!("```rust\n{:#?}\n```", track.get_info().await),
-            &msg,
-        )
-        .await;
+        ctx.reply(format!("```rust\n{:#?}\n```", track.get_info().await), &msg)
+            .await;
     } else {
         ctx.reply("im not play anything", &msg).await;
     }

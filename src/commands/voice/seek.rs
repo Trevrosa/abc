@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use serenity::all::{Context, Message};
 
-use super::Utils;
+use crate::utils::context::Ext;
 use crate::TrackHandleKey;
 
 pub async fn seek(ctx: Context, msg: Message) {
@@ -26,7 +26,7 @@ pub async fn seek(ctx: Context, msg: Message) {
         };
 
         if track.seek_async(Duration::from_secs(to_seek)).await.is_ok() {
-            ctx.reply(&format!("seekd to {to_seek} secs"), &msg).await;
+            ctx.reply(format!("seekd to {to_seek} secs"), &msg).await;
         } else {
             ctx.reply("faild to seek", &msg).await;
         }

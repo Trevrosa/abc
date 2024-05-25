@@ -1,0 +1,4 @@
+disallowed-methods = [
+    { path = "tokio::sync::rwlock::RwLock::read", reason = "use try_read instead; prefer to panic instead of wait for lock" },
+    { path = "serenity::model::channel::message::Message::reply", reason = "see crate::utils::context:Ext; cleaner code" }
+]

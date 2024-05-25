@@ -1,7 +1,7 @@
 use serenity::all::{Context, Message};
 use songbird::tracks::LoopState;
 
-use super::Utils;
+use crate::utils::context::Ext;
 use crate::TrackHandleKey;
 
 pub async fn set_loop(ctx: Context, msg: Message) {

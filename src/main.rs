@@ -1,13 +1,15 @@
 #![warn(clippy::pedantic)]
+#![deny(clippy::disallowed_methods)]
 #![allow(
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
     clippy::too_many_lines
 )]
 
-pub mod commands;
+mod commands;
 mod handlers;
 mod serenity_ctrlc;
+mod utils;
 
 use std::path::Path;
 

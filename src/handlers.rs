@@ -3,7 +3,8 @@ use serenity::{
     async_trait,
 };
 
-use crate::commands::{self, Utils};
+use crate::commands;
+use crate::utils::context::Ext;
 
 #[derive(Debug)]
 pub struct Handler;
@@ -31,10 +32,15 @@ impl EventHandler for Handler {
             return;
         }
 
+        let typing = msg.channel_id.start_typing(&ctx.http);
+
         match &msg.content.split(' ').collect::<Vec<&str>>()[0][1..] {
             "test" => commands::test(ctx, msg).await,
             "join" => commands::join(ctx, msg).await,
             "leave" => commands::leave(ctx, msg).await,
+            "cat" => commands::cat(ctx, msg).await,
+
+            // voice commands
             "play" => commands::voice::play(ctx, msg).await,
             "pause" => commands::voice::pause(ctx, msg).await,
             "resume" | "unpause" => commands::voice::resume(ctx, msg).await,
@@ -42,7 +48,11 @@ impl EventHandler for Handler {
             "loop" => commands::voice::set_loop(ctx, msg).await,
             "stop" => commands::voice::stop(ctx, msg).await,
             "seek" => commands::voice::seek(ctx, msg).await,
+
+            // do nothing if not matched
             &_ => (),
         };
+
+        typing.stop();
     }
 }

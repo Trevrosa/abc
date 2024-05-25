@@ -1,6 +1,6 @@
 use serenity::all::{Context, Message};
 
-use super::Utils;
+use crate::utils::context::Ext;
 
 pub async fn leave(ctx: Context, msg: Message) {
     let Some(manager) = songbird::get(&ctx).await.clone() else {

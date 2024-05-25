@@ -1,3 +1,5 @@
+// mostly taken from https://github.com/yehuthi/serenity_ctrlc/, changed to work with serenity 0.12.1
+
 use std::{
     future::Future,
     sync::{Arc, Weak},
@@ -5,7 +7,6 @@ use std::{
 
 use serenity::{gateway::ShardManager, Client};
 
-// mostly taken from https://github.com/yehuthi/serenity_ctrlc/, changed to work with serenity 0.12.1
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct Disconnector {
