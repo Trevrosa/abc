@@ -23,12 +23,12 @@ impl From<serenity::all::CreateMessage> for CreateMessage {
 }
 
 pub trait Ext {
-    fn reply<T: Into<CreateMessage>>(
+    fn reply(
         &self,
-        content: T,
+        content: impl Into<CreateMessage>,
         message: &Message,
     ) -> impl Future<Output = Message>;
-    fn edit_msg<T: Into<String>>(&self, content: T, msg: &mut Message) -> impl Future<Output = ()>;
+    fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()>;
     fn find_user_channel<'a>(
         &self,
         user: &User,
@@ -38,15 +38,15 @@ pub trait Ext {
 }
 
 impl Ext for Context {
-    fn reply<T: Into<CreateMessage>>(
+    fn reply(
         &self,
-        content: T,
+        content: impl Into<CreateMessage>,
         msg: &Message,
     ) -> impl Future<Output = Message> {
         super::internal::reply(self, content, msg)
     }
 
-    fn edit_msg<T: Into<String>>(&self, content: T, msg: &mut Message) -> impl Future<Output = ()> {
+    fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()> {
         super::internal::edit(self, content.into(), msg)
     }
 
