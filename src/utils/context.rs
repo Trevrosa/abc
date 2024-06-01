@@ -22,6 +22,7 @@ impl From<serenity::all::CreateMessage> for CreateMessage {
     }
 }
 
+/// Only impl for Context
 pub trait Ext {
     fn reply<T: Into<CreateMessage>>(
         &self,
