@@ -6,7 +6,7 @@ use super::context::CreateMessage;
 
 /// # Panics
 /// will panic if message not sent
-pub async fn reply<T: Into<CreateMessage>>(ctx: &Context, content: T, msg: &Message) -> Message {
+pub async fn reply(ctx: &Context, content: impl Into<CreateMessage>, msg: &Message) -> Message {
     let new_msg = content.into().0.reference_message(msg);
     msg.channel_id.send_message(&ctx, new_msg).await.unwrap()
 }
