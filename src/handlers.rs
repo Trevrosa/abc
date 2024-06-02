@@ -28,7 +28,7 @@ impl EventHandler for CommandHandler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.is_private() && !msg.is_own(&ctx.cache) {
+        if msg.guild_id.is_none() && msg.author != **ctx.cache.current_user() {
             if msg.author.id.get() == SEVEN {
                 ctx.reply("wasup boss", &msg).await;
             } else {

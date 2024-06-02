@@ -39,7 +39,7 @@ impl TypeMapKey for Blacklisted {
     type Value = Vec<u64>;
 }
 
-// discord id
+// discord id, so its ok to be unreadable
 #[allow(clippy::unreadable_literal)]
 pub const SEVEN: u64 = 674143957755756545;
 

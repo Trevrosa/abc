@@ -18,8 +18,8 @@ pub async fn edit_snipe(ctx: Context, msg: Message) {
         format!(
             "{} edited their message `{}` to: `{}` (<t:{}:R>)", // discord relative timestamp
             deleted_msg.author,
-            deleted_msg.old_message,
-            deleted_msg.new_message,
+            deleted_msg.old_message.replace('`', ""),
+            deleted_msg.new_message.replace('`', ""),
             deleted_msg.timestamp.unwrap().unix_timestamp()
         )
     } else {

@@ -17,7 +17,7 @@ pub async fn snipe(ctx: Context, msg: Message) {
     let snipe = format!(
         "{} deleted their message: `{}` (<t:{}:R>)", // discord relative timestamp
         deleted_msg.author,
-        deleted_msg.content,
+        deleted_msg.content.replace('`', ""),
         deleted_msg.timestamp.unix_timestamp()
     );
 

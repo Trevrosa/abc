@@ -14,5 +14,8 @@ pub async fn test(ctx: Context, msg: Message) {
         } else {
             blacklisted.push(SEVEN);
         }
+
+        ctx.reply(format!("```rust\n{blacklisted:#?}\n```"), &msg)
+            .await;
     }
 }
