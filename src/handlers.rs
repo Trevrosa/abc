@@ -7,7 +7,7 @@ use serenity::{
 };
 use tracing::info;
 
-use crate::{utils::context::Ext, SEVEN};
+use crate::{utils::context::Ext, Blacklisted, SEVEN};
 use crate::{
     commands,
     utils::sniping::{
@@ -39,9 +39,15 @@ impl EventHandler for CommandHandler {
             return;
         }
 
-        if !msg.content.starts_with('`') {
+        let global = ctx.data.try_read().unwrap();
+        let blacklisted = global.get::<Blacklisted>().unwrap();
+
+        if !msg.content.starts_with('`') || blacklisted.contains(&msg.author.id.get()) {
+            drop(global);
             return;
         }
+
+        drop(global);
 
         info!("received cmd in guild {}", msg.guild_id.unwrap());
 
