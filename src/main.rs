@@ -39,6 +39,8 @@ impl TypeMapKey for Blacklisted {
     type Value = Vec<u64>;
 }
 
+// discord id
+#[allow(clippy::unreadable_literal)]
 pub const SEVEN: u64 = 674143957755756545;
 
 #[tokio::main]

@@ -18,7 +18,7 @@ pub struct DeletedMessage {
     pub id: MessageId,
     pub author: String,
     pub content: String,
-    pub timestamp: Timestamp
+    pub timestamp: Timestamp,
 }
 
 impl From<Message> for DeletedMessage {
@@ -27,7 +27,7 @@ impl From<Message> for DeletedMessage {
             id: value.id,
             timestamp: value.timestamp,
             author: value.author.name,
-            content: value.content
+            content: value.content,
         }
     }
 }

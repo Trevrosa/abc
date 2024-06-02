@@ -9,9 +9,7 @@ use tracing::{error, info};
 
 use crate::{
     commands,
-    utils::sniping::{
-        EditedMessage, MostRecentDeletedMessage, MostRecentEditedMessage,
-    },
+    utils::sniping::{EditedMessage, MostRecentDeletedMessage, MostRecentEditedMessage},
 };
 use crate::{utils::context::Ext, Blacklisted, SEVEN};
 
@@ -125,10 +123,7 @@ impl EventHandler for MessageSniper {
         msg: MessageId,
         guild: Option<GuildId>,
     ) {
-        let msg = ctx
-            .cache
-            .message(channel, msg)
-            .map(|x| x.clone());
+        let msg = ctx.cache.message(channel, msg).map(|x| x.clone());
 
         let Some(msg) = msg else {
             error!("tried to get message that didnt exist in cache");
