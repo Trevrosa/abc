@@ -130,6 +130,15 @@ impl EventHandler for MessageSniper {
             return;
         };
 
+        // ignore bots
+        if msg.author.bot {
+            return;
+        }
+        // ignore commands
+        if msg.content.starts_with('`') {
+            return;
+        }
+
         let Some(guild) = guild else {
             return;
         };
