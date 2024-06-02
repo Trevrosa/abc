@@ -28,7 +28,7 @@ impl DeletedMessage {
 
 pub struct EditedMessage {
     pub id: MessageId,
-    pub timestamp: Timestamp,
+    pub timestamp: Option<Timestamp>,
     pub author: String,
     pub old_message: String,
     pub new_message: String,
@@ -41,7 +41,7 @@ impl EditedMessage {
     pub fn new(old: Message, new: Message) -> Self {
         Self {
             id: old.id,
-            timestamp: new.edited_timestamp.unwrap(),
+            timestamp: new.edited_timestamp,
             author: old.author.name,
             old_message: old.content,
             new_message: new.content,

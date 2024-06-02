@@ -16,13 +16,15 @@ pub async fn join(ctx: Context, msg: Message) {
     let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
 
     let channel = if args.len() == 2 {
-        let id: u64 = if args[1].starts_with("<#") {
-            args[1][2..args[1].len() - 1].parse().unwrap()
+        let id: Result<u64, std::num::ParseIntError> = if args[1].starts_with("<#") {
+            args[1][2..args[1].len() - 1].parse::<u64>()
         } else if args[1].starts_with("https://discord.com/channels/") {
-            args[1].split('/').collect::<Vec<&str>>()[5]
-                .parse()
-                .unwrap()
+            args[1].split('/').collect::<Vec<&str>>()[5].parse::<u64>()
         } else {
+            args[1].parse::<u64>()
+        };
+
+        let Ok(id) = id else {
             ctx.reply("not a vc", &msg).await;
             return;
         };

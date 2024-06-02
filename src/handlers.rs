@@ -93,6 +93,11 @@ impl EventHandler for MessageSniper {
             return;
         };
 
+        // ignore bots
+        if new.author.bot {
+            return;
+        }
+
         ctx.data
             .write()
             .await

@@ -14,13 +14,20 @@ pub async fn edit_snipe(ctx: Context, msg: Message) {
         return;
     };
 
-    let snipe = format!(
-        "{} edited their message `{}` to: `{}` (<t:{}:R>)", // discord relative timestamp
-        deleted_msg.author,
-        deleted_msg.old_message,
-        deleted_msg.new_message,
-        deleted_msg.timestamp.unix_timestamp()
-    );
+    let snipe = if deleted_msg.timestamp.is_some() {
+        format!(
+            "{} edited their message `{}` to: `{}` (<t:{}:R>)", // discord relative timestamp
+            deleted_msg.author,
+            deleted_msg.old_message,
+            deleted_msg.new_message,
+            deleted_msg.timestamp.unwrap().unix_timestamp()
+        )
+    } else {
+        format!(
+            "{} edited their message `{}` to: `{}`", // discord relative timestamp
+            deleted_msg.author, deleted_msg.old_message, deleted_msg.new_message,
+        )
+    };
 
     ctx.reply(snipe, &msg).await;
 }
