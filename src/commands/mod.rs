@@ -1,3 +1,5 @@
+pub mod voice;
+
 mod join;
 pub use join::join;
 
@@ -16,4 +18,5 @@ pub use edit_snipe::edit_snipe;
 mod snipe;
 pub use snipe::snipe;
 
-pub mod voice;
+mod blacklist;
+pub use blacklist::blacklist;

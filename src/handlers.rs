@@ -37,7 +37,11 @@ impl EventHandler for CommandHandler {
             return;
         }
 
-        let global = ctx.data.try_read().unwrap();
+        let typing = msg.channel_id.start_typing(&ctx.http);
+
+        // here, we want to wait instead of panicking.
+        #[allow(clippy::disallowed_methods)]
+        let global = ctx.data.read().await;
         let blacklisted = global.get::<Blacklisted>().unwrap();
 
         if !msg.content.starts_with('`') || blacklisted.contains(&msg.author.id.get()) {
@@ -47,16 +51,16 @@ impl EventHandler for CommandHandler {
 
         drop(global);
 
-        info!("received cmd in guild {}", msg.guild_id.unwrap());
-
-        let typing = msg.channel_id.start_typing(&ctx.http);
+        info!("received cmd '{}'", &msg.content);
 
         match &msg.content.split(' ').collect::<Vec<&str>>()[0][1..] {
             // misc commands
             "test" => commands::test(ctx, msg).await,
+            "cat" => commands::cat(ctx, msg).await,
+            "black" => commands::blacklist(ctx, msg).await,
+
             "join" => commands::join(ctx, msg).await,
             "leave" => commands::leave(ctx, msg).await,
-            "cat" => commands::cat(ctx, msg).await,
 
             "snipe" => commands::snipe(ctx, msg).await,
             "editsnipe" => commands::edit_snipe(ctx, msg).await,
@@ -101,10 +105,6 @@ impl EventHandler for MessageSniper {
         if new.author.bot {
             return;
         }
-        // ignore commands
-        if new.content.starts_with('`') {
-            return;
-        }
 
         ctx.data
             .write()
@@ -132,10 +132,6 @@ impl EventHandler for MessageSniper {
 
         // ignore bots
         if msg.author.bot {
-            return;
-        }
-        // ignore commands
-        if msg.content.starts_with('`') {
             return;
         }
 

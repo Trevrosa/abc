@@ -17,10 +17,11 @@ use std::path::Path;
 use anyhow::Result;
 use handlers::{CommandHandler, MessageSniper};
 use serenity::{all::Settings, prelude::*};
+use serenity_ctrlc::Disconnector;
 use songbird::{tracks::TrackHandle, SerenityInit};
 
+use tracing::{error, info};
 use utils::sniping::{MostRecentDeletedMessage, MostRecentEditedMessage};
-
 pub struct TrackHandleKey;
 
 impl TypeMapKey for TrackHandleKey {
@@ -43,6 +44,25 @@ impl TypeMapKey for Blacklisted {
 #[allow(clippy::unreadable_literal)]
 pub const SEVEN: u64 = 674143957755756545;
 
+#[allow(clippy::unreadable_literal)]
+pub const OWNER: u64 = 758926553454870529;
+
+// serialize blacklisted users to disk, then disconnect all shards
+async fn end_handler(disconnector: Option<Disconnector>) {
+    if let Some(disconnector) = disconnector {
+        if let Ok(global) = disconnector.data.try_read() {
+            let blacklisted = bincode::serialize(global.get::<Blacklisted>().unwrap()).unwrap();
+            std::fs::write("blacklisted", blacklisted).unwrap();
+
+            info!("saved blacklisted users");
+        } else {
+            error!("failed to save blacklisted users");
+        }
+
+        disconnector.disconnect().await;
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // tracing_subscriber::fmt()
@@ -57,9 +77,21 @@ async fn main() -> Result<()> {
     let token: &str = include_str!("../token");
     let intents: GatewayIntents = GatewayIntents::all();
 
-    // have to do this instead of a struct expression because Settings is non_exhaustive
+    // have to do this instead of a struct expression because Settings is non exhaustive
     let mut cache_settings = Settings::default();
-    cache_settings.max_messages = 100;
+    cache_settings.max_messages = 50;
+
+    let blacklisted: Vec<u64> = if let Ok(serialized) = std::fs::read("blacklisted") {
+        if let Ok(blacklisted) = bincode::deserialize(&serialized) {
+            info!("loaded blacklisted users");
+            blacklisted
+        } else {
+            error!("failed to load blacklisted users; using empty");
+            Vec::new()
+        }
+    } else {
+        Vec::new()
+    };
 
     let mut client: Client = Client::builder(token, intents)
         .event_handler(CommandHandler)
@@ -68,12 +100,12 @@ async fn main() -> Result<()> {
         .type_map_insert::<HttpClient>(reqwest::Client::new())
         .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
         .type_map_insert::<MostRecentEditedMessage>(HashMap::new())
-        .type_map_insert::<Blacklisted>(Vec::new())
+        .type_map_insert::<Blacklisted>(blacklisted)
         .cache_settings(cache_settings)
         .register_songbird()
         .await?;
 
-    serenity_ctrlc::ctrlc(&client)?;
+    serenity_ctrlc::ctrlc_with(&client, end_handler)?;
 
     client.start().await?;
 

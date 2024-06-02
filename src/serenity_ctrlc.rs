@@ -1,4 +1,4 @@
-// mostly taken from https://github.com/yehuthi/serenity_ctrlc/, changed to work with serenity 0.12.1
+// mostly taken from https://github.com/yehuthi/serenity_ctrlc/, changed to work with serenity 0.12.1 and for my own purposes
 
 use std::{
     future::Future,
@@ -6,20 +6,22 @@ use std::{
 };
 
 use serenity::{gateway::ShardManager, Client};
+use songbird::typemap::TypeMap;
+use tokio::sync::RwLock;
 
-#[derive(Debug)]
-#[repr(transparent)]
 pub struct Disconnector {
     shard_manager: Arc<ShardManager>,
+    pub data: Arc<RwLock<TypeMap>>,
 }
 
 impl Disconnector {
     /// Creates a [`Disconnector`] [`Option`] from a [`Weak`] [`ShardManager`].
     ///
     /// Returns [`None`] if the [`ShardManager`] has been already dropped.
-    fn from_weak_shard_manager(shard_manager: &Weak<ShardManager>) -> Option<Self> {
+    fn new(shard_manager: &Weak<ShardManager>, data: &Weak<RwLock<TypeMap>>) -> Option<Self> {
         Some(Self {
             shard_manager: shard_manager.upgrade()?,
+            data: data.upgrade()?,
         })
     }
 
@@ -28,12 +30,12 @@ impl Disconnector {
         self.shard_manager.shutdown_all().await;
     }
 
-    /// Disconnects the bot when there is [`Some`] [`Disconnector`].
-    pub async fn disconnect_some(disconnector: Option<Self>) {
-        if let Some(disconnector) = disconnector {
-            disconnector.disconnect().await;
-        }
-    }
+    // Disconnects the bot when there is [`Some`] [`Disconnector`].
+    // pub async fn disconnect_some(disconnector: Option<Self>) {
+    //     if let Some(disconnector) = disconnector {
+    //         disconnector.disconnect().await;
+    //     }
+    // }
 }
 
 pub fn ctrlc_with<F: Future + Send>(
@@ -41,15 +43,18 @@ pub fn ctrlc_with<F: Future + Send>(
     mut f: impl (FnMut(Option<Disconnector>) -> F) + Send + 'static,
 ) -> Result<(), ctrlc::Error> {
     let rt = tokio::runtime::Handle::current();
+
     let shard_manager = Arc::downgrade(&client.shard_manager);
+    let data = Arc::downgrade(&client.data);
+
     ctrlc::set_handler(move || {
-        let disconnect = Disconnector::from_weak_shard_manager(&shard_manager);
+        let disconnect = Disconnector::new(&shard_manager, &data);
         rt.block_on(async {
             f(disconnect).await;
         });
     })
 }
 
-pub fn ctrlc(client: &Client) -> Result<(), ctrlc::Error> {
-    ctrlc_with(client, Disconnector::disconnect_some)
-}
+// pub fn ctrlc(client: &Client) -> Result<(), ctrlc::Error> {
+//     ctrlc_with(client, Disconnector::disconnect_some)
+// }
