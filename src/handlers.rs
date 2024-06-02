@@ -26,7 +26,7 @@ impl EventHandler for CommandHandler {
             OnlineStatus::DoNotDisturb,
         );
 
-        info!("set status");
+        info!("successfully set status");
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
