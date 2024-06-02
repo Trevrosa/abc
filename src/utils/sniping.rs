@@ -1,4 +1,4 @@
-use serenity::all::{ChannelId, GuildId, Message, MessageId, Timestamp};
+use serenity::all::{GuildId, Message, MessageId, Timestamp};
 use songbird::typemap::TypeMapKey;
 use std::collections::HashMap;
 
@@ -16,13 +16,19 @@ impl TypeMapKey for MostRecentEditedMessage {
 
 pub struct DeletedMessage {
     pub id: MessageId,
-    pub channel: ChannelId,
+    pub author: String,
+    pub content: String,
+    pub timestamp: Timestamp
 }
 
-impl DeletedMessage {
-    #[must_use]
-    pub fn new(msg: MessageId, channel: ChannelId) -> Self {
-        Self { id: msg, channel }
+impl From<Message> for DeletedMessage {
+    fn from(value: Message) -> Self {
+        Self {
+            id: value.id,
+            timestamp: value.timestamp,
+            author: value.author.name,
+            content: value.content
+        }
     }
 }
 

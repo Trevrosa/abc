@@ -14,19 +14,9 @@ pub async fn snipe(ctx: Context, msg: Message) {
         return;
     };
 
-    let deleted_msg = ctx
-        .cache
-        .message(deleted_msg.channel, deleted_msg.id)
-        .map(|x| x.clone());
-
-    let Some(deleted_msg) = deleted_msg else {
-        ctx.reply("msg not found", &msg).await;
-        return;
-    };
-
     let snipe = format!(
         "{} said: `{}` (<t:{}:R>)", // discord relative timestamp
-        deleted_msg.author.name,
+        deleted_msg.author,
         deleted_msg.content,
         deleted_msg.timestamp.unix_timestamp()
     );

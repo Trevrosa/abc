@@ -5,15 +5,15 @@ use serenity::{
     },
     async_trait,
 };
-use tracing::info;
+use tracing::{error, info};
 
-use crate::{utils::context::Ext, Blacklisted, SEVEN};
 use crate::{
     commands,
     utils::sniping::{
-        DeletedMessage, EditedMessage, MostRecentDeletedMessage, MostRecentEditedMessage,
+        EditedMessage, MostRecentDeletedMessage, MostRecentEditedMessage,
     },
 };
+use crate::{utils::context::Ext, Blacklisted, SEVEN};
 
 #[derive(Debug)]
 pub struct CommandHandler;
@@ -103,6 +103,10 @@ impl EventHandler for MessageSniper {
         if new.author.bot {
             return;
         }
+        // ignore commands
+        if new.content.starts_with('`') {
+            return;
+        }
 
         ctx.data
             .write()
@@ -121,6 +125,16 @@ impl EventHandler for MessageSniper {
         msg: MessageId,
         guild: Option<GuildId>,
     ) {
+        let msg = ctx
+            .cache
+            .message(channel, msg)
+            .map(|x| x.clone());
+
+        let Some(msg) = msg else {
+            error!("tried to get message that didnt exist in cache");
+            return;
+        };
+
         let Some(guild) = guild else {
             return;
         };
@@ -130,7 +144,7 @@ impl EventHandler for MessageSniper {
             .await
             .get_mut::<MostRecentDeletedMessage>()
             .unwrap() // safe to unwrap since hashmap initialized in main
-            .insert(guild, DeletedMessage::new(msg, channel));
+            .insert(guild, msg.into());
 
         info!("new deleted msg stored");
     }
