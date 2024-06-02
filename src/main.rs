@@ -33,6 +33,14 @@ impl TypeMapKey for HttpClient {
     type Value = reqwest::Client;
 }
 
+pub struct Blacklisted;
+
+impl TypeMapKey for Blacklisted {
+    type Value = Vec<u64>;
+}
+
+pub const SEVEN: u64 = 674143957755756545;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // tracing_subscriber::fmt()
@@ -58,6 +66,7 @@ async fn main() -> Result<()> {
         .type_map_insert::<HttpClient>(reqwest::Client::new())
         .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
         .type_map_insert::<MostRecentEditedMessage>(HashMap::new())
+        .type_map_insert::<Blacklisted>(Vec::new())
         .cache_settings(cache_settings)
         .register_songbird()
         .await?;

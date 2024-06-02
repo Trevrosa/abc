@@ -7,7 +7,7 @@ use serenity::{
 };
 use tracing::info;
 
-use crate::utils::context::Ext;
+use crate::{utils::context::Ext, SEVEN};
 use crate::{
     commands,
     utils::sniping::{
@@ -31,7 +31,7 @@ impl EventHandler for CommandHandler {
 
     async fn message(&self, ctx: Context, msg: Message) {
         if msg.is_private() && !msg.is_own(&ctx.cache) {
-            if msg.author.name == "devon03747" {
+            if msg.author.id.get() == SEVEN {
                 ctx.reply("wasup boss", &msg).await;
             } else {
                 ctx.reply("im busy", &msg).await;
