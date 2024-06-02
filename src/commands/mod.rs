@@ -10,4 +10,10 @@ pub use leave::leave;
 mod cat;
 pub use cat::cat;
 
+mod edit_snipe;
+pub use edit_snipe::edit_snipe;
+
+mod snipe;
+pub use snipe::snipe;
+
 pub mod voice;

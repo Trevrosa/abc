@@ -3,7 +3,7 @@ use serenity::all::{Context, Message};
 
 use crate::utils::context::Ext;
 use crate::utils::embed_message;
-use crate::HttpClientKey;
+use crate::HttpClient;
 
 #[allow(unused)]
 #[derive(Deserialize)]
@@ -17,7 +17,7 @@ struct CatImage<'a> {
 pub async fn cat(ctx: Context, msg: Message) {
     let global = ctx.data.try_read().unwrap();
 
-    let Some(client) = global.get::<HttpClientKey>() else {
+    let Some(client) = global.get::<HttpClient>() else {
         drop(global);
         ctx.reply("failed to get http client", &msg).await;
         return;

@@ -11,12 +11,15 @@ mod handlers;
 mod serenity_ctrlc;
 mod utils;
 
+use std::collections::HashMap;
 use std::path::Path;
 
 use anyhow::Result;
-use handlers::Handler;
-use serenity::prelude::*;
+use handlers::{CommandHandler, MessageSniper};
+use serenity::{all::Settings, prelude::*};
 use songbird::{tracks::TrackHandle, SerenityInit};
+
+use utils::sniping::{MostRecentDeletedMessage, MostRecentEditedMessage};
 
 pub struct TrackHandleKey;
 
@@ -24,9 +27,9 @@ impl TypeMapKey for TrackHandleKey {
     type Value = TrackHandle;
 }
 
-pub struct HttpClientKey;
+pub struct HttpClient;
 
-impl TypeMapKey for HttpClientKey {
+impl TypeMapKey for HttpClient {
     type Value = reqwest::Client;
 }
 
@@ -44,10 +47,18 @@ async fn main() -> Result<()> {
     let token: &str = include_str!("../token");
     let intents: GatewayIntents = GatewayIntents::all();
 
+    // have to do this instead of a struct expression because Settings is non_exhaustive
+    let mut cache_settings = Settings::default();
+    cache_settings.max_messages = 100;
+
     let mut client: Client = Client::builder(token, intents)
-        .event_handler(Handler)
+        .event_handler(CommandHandler)
+        .event_handler(MessageSniper)
         .type_map(TypeMap::new())
-        .type_map_insert::<HttpClientKey>(reqwest::Client::new())
+        .type_map_insert::<HttpClient>(reqwest::Client::new())
+        .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
+        .type_map_insert::<MostRecentEditedMessage>(HashMap::new())
+        .cache_settings(cache_settings)
         .register_songbird()
         .await?;
 

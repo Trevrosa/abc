@@ -10,7 +10,7 @@ use serenity::all::{ChannelType, Context, Message};
 use tracing::info;
 
 use crate::utils::context::Ext;
-use crate::{HttpClientKey, TrackHandleKey};
+use crate::{HttpClient, TrackHandleKey};
 
 pub async fn play(ctx: Context, msg: Message) {
     let Some(manager) = songbird::get(&ctx).await.clone() else {
@@ -83,7 +83,7 @@ pub async fn play(ctx: Context, msg: Message) {
         }
     } else if !msg.attachments.is_empty() {
         let global = ctx.data.try_read().unwrap();
-        let client = global.get::<HttpClientKey>().unwrap();
+        let client = global.get::<HttpClient>().unwrap();
 
         let Ok(request) = client.get(&msg.attachments[0].url).build() else {
             drop(global);

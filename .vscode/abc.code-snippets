@@ -23,7 +23,7 @@
 			"use serenity::all::{Context, Message};",
 			"",
 			"pub async fn $1(ctx: Context, msg: Message) {",
-			"",
+			"\t",
 			"}",
 		]
 	}

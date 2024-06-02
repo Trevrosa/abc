@@ -1,21 +1,32 @@
 use serenity::{
-    all::{ActivityData, Context, EventHandler, Message, OnlineStatus, Ready},
+    all::{
+        ActivityData, ChannelId, Context, EventHandler, GuildId, Message, MessageId,
+        MessageUpdateEvent, OnlineStatus, Ready,
+    },
     async_trait,
 };
+use tracing::info;
 
-use crate::commands;
 use crate::utils::context::Ext;
+use crate::{
+    commands,
+    utils::sniping::{
+        DeletedMessage, EditedMessage, MostRecentDeletedMessage, MostRecentEditedMessage,
+    },
+};
 
 #[derive(Debug)]
-pub struct Handler;
+pub struct CommandHandler;
 
 #[async_trait]
-impl EventHandler for Handler {
+impl EventHandler for CommandHandler {
     async fn ready(&self, ctx: Context, _: Ready) {
         ctx.set_presence(
             Some(ActivityData::custom("Disrupting the Social Democrats")),
             OnlineStatus::DoNotDisturb,
         );
+
+        info!("set status");
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
@@ -32,13 +43,19 @@ impl EventHandler for Handler {
             return;
         }
 
+        info!("received cmd in guild {}", msg.guild_id.unwrap());
+
         let typing = msg.channel_id.start_typing(&ctx.http);
 
         match &msg.content.split(' ').collect::<Vec<&str>>()[0][1..] {
+            // misc commands
             "test" => commands::test(ctx, msg).await,
             "join" => commands::join(ctx, msg).await,
             "leave" => commands::leave(ctx, msg).await,
             "cat" => commands::cat(ctx, msg).await,
+
+            "snipe" => commands::snipe(ctx, msg).await,
+            "editsnipe" => commands::edit_snipe(ctx, msg).await,
 
             // voice commands
             "play" => commands::voice::play(ctx, msg).await,
@@ -54,5 +71,56 @@ impl EventHandler for Handler {
         };
 
         typing.stop();
+    }
+}
+
+pub struct MessageSniper;
+
+#[async_trait]
+impl EventHandler for MessageSniper {
+    async fn message_update(
+        &self,
+        ctx: Context,
+        old: Option<Message>,
+        new: Option<Message>,
+        _: MessageUpdateEvent,
+    ) {
+        let Some(old) = old else {
+            return;
+        };
+
+        let Some(new) = new else {
+            return;
+        };
+
+        ctx.data
+            .write()
+            .await
+            .get_mut::<MostRecentEditedMessage>()
+            .unwrap()
+            .insert(new.guild_id.unwrap(), EditedMessage::new(old, new));
+
+        info!("new edited message stored");
+    }
+
+    async fn message_delete(
+        &self,
+        ctx: Context,
+        channel: ChannelId,
+        msg: MessageId,
+        guild: Option<GuildId>,
+    ) {
+        let Some(guild) = guild else {
+            return;
+        };
+
+        ctx.data
+            .write()
+            .await
+            .get_mut::<MostRecentDeletedMessage>()
+            .unwrap() // safe to unwrap since hashmap initialized in main
+            .insert(guild, DeletedMessage::new(msg, channel));
+
+        info!("new deleted msg stored");
     }
 }
