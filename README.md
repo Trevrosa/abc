@@ -4,8 +4,9 @@
 each module in `src/commands` must have a function with this signature:
 
 ```rust
-fn command(ctx: serenity::client::Context, msg: serenity::model::channel::Message) -> impl Future<Output = ()>
+fn command(ctx: Context, msg: Message) -> impl Future<Output = ()>
 ```
+where `Context` is `serenity::client::Context`, and `Message` is `serenity::model::channel::Message`
 
 or be a module that re-exports other modules.
 
@@ -14,6 +15,8 @@ or be a module that re-exports other modules.
 ## building
 - create file `token` at project root and put your bot token in
 - create file `cat_apikey` at project root and put your [cat api key](https://thecatapi.com) in
+- install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and make sure the binary is available in `/usr/bin`
+- if on windows, building might not work.
 - `cargo build -r`
 
 ## notes
