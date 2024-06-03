@@ -6,7 +6,7 @@ each module in `src/commands` must have a function with this signature:
 ```rust
 fn command(ctx: Context, msg: Message) -> impl Future<Output = ()>
 ```
-where `Context` is `serenity::client::Context`, and `Message` is `serenity::model::channel::Message`
+(where `Context` is `serenity::client::Context`, and `Message` is `serenity::model::channel::Message`)
 
 or be a module that re-exports other modules.
 
