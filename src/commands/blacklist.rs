@@ -18,24 +18,24 @@ pub async fn blacklist(ctx: Context, msg: Message) {
         let members = guild.members;
 
         let user: u64 = if let Ok(user) = args[1].parse::<u64>() {
-            if members.contains_key(&UserId::new(user)) {
-                user
-            } else {
+            if !members.contains_key(&UserId::new(user)) {
                 ctx.reply("that not real", &msg).await;
                 return;
             }
+
+            user
         } else if args[1].starts_with("<@") {
             let Ok(user) = args[1][2..args[1].len() - 1].parse::<u64>() else {
                 ctx.reply("that not real", &msg).await;
                 return;
             };
 
-            if members.contains_key(&UserId::new(user)) {
-                user
-            } else {
+            if !members.contains_key(&UserId::new(user)) {
                 ctx.reply("that not real", &msg).await;
                 return;
             }
+            
+            user
         } else {
             ctx.reply("that not real", &msg).await;
             return;

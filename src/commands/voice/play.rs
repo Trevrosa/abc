@@ -48,19 +48,21 @@ pub async fn play(ctx: Context, msg: Message) {
                     let new_msg = if i == 0 {
                         format!("```{}```", chunk.unwrap().trim())
                     } else {
-                        // should work since we put ``` already
+                        // should work since we put ``` already at the start of msg
                         format!(
                             "{}\n{}```",
                             &greet.content.strip_suffix("```").unwrap(),
                             chunk.unwrap().trim()
                         )
                     };
-                    ctx.edit_msg(new_msg, &mut greet).await;
+
+                    // ignore error since command will still work if msg not edited
+                    let _ = ctx.edit_msg(new_msg, &mut greet).await;
                 }
             }
 
             if !downloader.wait().unwrap().success() {
-                ctx.edit_msg("download faild", &mut greet).await;
+                ctx.edit_msg("download faild", &mut greet).await.unwrap();
                 return;
             }
 
@@ -72,13 +74,13 @@ pub async fn play(ctx: Context, msg: Message) {
                 .read_to_end(&mut bytes)
                 .is_err()
             {
-                ctx.edit_msg("faild to read file", &mut greet).await;
+                ctx.edit_msg("faild to read file", &mut greet).await.unwrap();
                 return;
             }
 
             bytes.into()
         } else {
-            ctx.edit_msg("faild to start download", &mut greet).await;
+            ctx.edit_msg("faild to start download", &mut greet).await.unwrap();
             return;
         }
     } else if !msg.attachments.is_empty() {
@@ -97,15 +99,15 @@ pub async fn play(ctx: Context, msg: Message) {
 
         info!("downloaded {} with reqwest", &msg.attachments[0].url);
 
-        if let Ok(bytes) = response.bytes().await {
-            bytes
-        } else {
-            ctx.edit_msg("faild to decode file", &mut greet).await;
+        let Ok(bytes) = response.bytes().await else {
+            ctx.edit_msg("faild to decode file", &mut greet).await.unwrap();
             drop(global);
             return;
-        }
+        };
+
+        bytes
     } else {
-        ctx.edit_msg("u dont say wat i play", &mut greet).await;
+        ctx.edit_msg("u dont say wat i play", &mut greet).await.unwrap();
         return;
     };
 
@@ -113,6 +115,7 @@ pub async fn play(ctx: Context, msg: Message) {
         ctx.reply("faild to get channels", &msg).await;
         return;
     };
+
     let mut channels = channels.iter();
 
     // join vc if bot has never joined a vc
@@ -150,8 +153,8 @@ pub async fn play(ctx: Context, msg: Message) {
         let track = handler.play_only_input(input.into());
 
         ctx.data.write().await.insert::<TrackHandleKey>(track);
-        ctx.edit_msg("playing for u!", &mut greet).await;
+        ctx.edit_msg("playing for u!", &mut greet).await.unwrap();
     } else {
-        ctx.edit_msg("faild to get voice handler", &mut greet).await;
+        ctx.edit_msg("faild to get voice handler", &mut greet).await.unwrap();
     }
 }

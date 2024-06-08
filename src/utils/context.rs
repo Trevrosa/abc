@@ -1,6 +1,6 @@
 use std::{collections::hash_map::Iter, future::Future};
 
-use serenity::all::{ChannelId, ChannelType, Context, GuildChannel, Message, User};
+use serenity::{all::{ChannelId, ChannelType, Context, GuildChannel, Message, User}, Error};
 
 pub struct CreateMessage(pub serenity::all::CreateMessage);
 
@@ -29,7 +29,7 @@ pub trait Ext {
         content: impl Into<CreateMessage>,
         message: &Message,
     ) -> impl Future<Output = Message>;
-    fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()>;
+    fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = Result<(), Error>>;
     fn find_user_channel<'a>(
         &self,
         user: &User,
@@ -47,7 +47,7 @@ impl Ext for Context {
         super::internal::reply(self, content, msg)
     }
 
-    fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()> {
+    fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = Result<(), Error>> {
         super::internal::edit(self, content.into(), msg)
     }
 
