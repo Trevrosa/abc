@@ -34,7 +34,7 @@ pub async fn blacklist(ctx: Context, msg: Message) {
                 ctx.reply("that not real", &msg).await;
                 return;
             }
-            
+
             user
         } else {
             ctx.reply("that not real", &msg).await;

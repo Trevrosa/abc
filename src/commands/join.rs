@@ -13,6 +13,8 @@ pub async fn join(ctx: Context, msg: Message) {
         return;
     };
 
+    let mut channels = channels.iter();
+
     let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
 
     let channel = if args.len() == 2 {
@@ -42,25 +44,7 @@ pub async fn join(ctx: Context, msg: Message) {
             None
         }
     } else {
-        channels
-            .iter()
-            .find_map(|c| {
-                let c = c.1;
-
-                if c.kind != ChannelType::Voice {
-                    return None;
-                }
-
-                let Ok(members) = c.members(&ctx.cache) else {
-                    return None;
-                };
-
-                if members.iter().any(|m| m.user == msg.author) {
-                    Some(c)
-                } else {
-                    None
-                }
-            })
+        ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels)
             .cloned()
     };
 

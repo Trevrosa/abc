@@ -15,13 +15,14 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use anyhow::Result;
-use handlers::{CommandHandler, MessageSniper};
+use handlers::{CommandHandler, Handler, MessageSniper};
 use serenity::{all::Settings, prelude::*};
 use serenity_ctrlc::Disconnector;
 use songbird::{tracks::TrackHandle, SerenityInit};
 
 use tracing::{error, info};
 use utils::sniping::{MostRecentDeletedMessage, MostRecentEditedMessage};
+
 pub struct TrackHandleKey;
 
 impl TypeMapKey for TrackHandleKey {
@@ -69,7 +70,6 @@ async fn main() -> Result<()> {
     //     .with_max_level(tracing::level_filters::LevelFilter::DEBUG)
     //     .without_time()
     //     .init();
-
     assert!(Path::new("/usr/bin/yt-dlp").exists());
 
     tracing_subscriber::fmt().without_time().init();
@@ -82,21 +82,24 @@ async fn main() -> Result<()> {
     cache_settings.max_messages = 50;
 
     let blacklisted: Vec<u64> = if let Ok(serialized) = std::fs::read("blacklisted") {
-        if let Ok(blacklisted) = bincode::deserialize(&serialized) {
-            info!("loaded blacklisted users");
-            blacklisted
-        } else {
-            error!("failed to load blacklisted users; using empty");
-            Vec::new()
+        match bincode::deserialize(&serialized) {
+            Ok(blacklisted) => {
+                info!("loaded blacklisted users");
+                blacklisted
+            }
+            Err(e) => {
+                error!("failed to load blacklisted users ({e}); using empty");
+                Vec::new()
+            }
         }
     } else {
         Vec::new()
     };
 
     let mut client: Client = Client::builder(token, intents)
+        .event_handler(Handler)
         .event_handler(CommandHandler)
         .event_handler(MessageSniper)
-        .type_map(TypeMap::new())
         .type_map_insert::<HttpClient>(reqwest::Client::new())
         .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
         .type_map_insert::<MostRecentEditedMessage>(HashMap::new())

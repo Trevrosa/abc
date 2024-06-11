@@ -74,13 +74,17 @@ pub async fn play(ctx: Context, msg: Message) {
                 .read_to_end(&mut bytes)
                 .is_err()
             {
-                ctx.edit_msg("faild to read file", &mut greet).await.unwrap();
+                ctx.edit_msg("faild to read file", &mut greet)
+                    .await
+                    .unwrap();
                 return;
             }
 
             bytes.into()
         } else {
-            ctx.edit_msg("faild to start download", &mut greet).await.unwrap();
+            ctx.edit_msg("faild to start download", &mut greet)
+                .await
+                .unwrap();
             return;
         }
     } else if !msg.attachments.is_empty() {
@@ -100,14 +104,18 @@ pub async fn play(ctx: Context, msg: Message) {
         info!("downloaded {} with reqwest", &msg.attachments[0].url);
 
         let Ok(bytes) = response.bytes().await else {
-            ctx.edit_msg("faild to decode file", &mut greet).await.unwrap();
+            ctx.edit_msg("faild to decode file", &mut greet)
+                .await
+                .unwrap();
             drop(global);
             return;
         };
 
         bytes
     } else {
-        ctx.edit_msg("u dont say wat i play", &mut greet).await.unwrap();
+        ctx.edit_msg("u dont say wat i play", &mut greet)
+            .await
+            .unwrap();
         return;
     };
 
@@ -155,6 +163,8 @@ pub async fn play(ctx: Context, msg: Message) {
         ctx.data.write().await.insert::<TrackHandleKey>(track);
         ctx.edit_msg("playing for u!", &mut greet).await.unwrap();
     } else {
-        ctx.edit_msg("faild to get voice handler", &mut greet).await.unwrap();
+        ctx.edit_msg("faild to get voice handler", &mut greet)
+            .await
+            .unwrap();
     }
 }
