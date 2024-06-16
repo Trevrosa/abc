@@ -5,7 +5,7 @@ use crate::utils::context::Ext;
 pub async fn join(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let Some(guild) = msg.guild_id else {
         return Err("faild to get guild");
-    };  
+    };
 
     let Ok(channels) = guild.channels(&ctx).await else {
         return Err("faild to get channels");
@@ -48,15 +48,15 @@ pub async fn join(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         return Err("u arent in a vc");
     };
 
-    if let Some(manager) = songbird::get(&ctx).await.clone() {
+    if let Some(manager) = songbird::get(ctx).await.clone() {
         let Some(guild) = msg.guild_id else {
             return Err("faild to get guild");
         };
 
         if manager.join(guild, channel.id).await.is_ok() {
-            ctx.reply("joined u", &msg).await;
+            ctx.reply("joined u", msg).await;
         } else {
-            ctx.reply("faild to join", &msg).await;
+            ctx.reply("faild to join", msg).await;
         }
     } else {
         return Err("voice manager failed");

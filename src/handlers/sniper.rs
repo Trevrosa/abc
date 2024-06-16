@@ -6,10 +6,10 @@ use tracing::{error, info};
 
 use crate::utils::sniping::{EditedMessage, MostRecentDeletedMessage, MostRecentEditedMessage};
 
-pub struct MessageSniper;
+pub struct Sniper;
 
 #[async_trait]
-impl EventHandler for MessageSniper {
+impl EventHandler for Sniper {
     async fn message_update(
         &self,
         ctx: Context,

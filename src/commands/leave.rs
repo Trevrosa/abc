@@ -3,7 +3,7 @@ use serenity::all::{Context, Message};
 use crate::utils::context::Ext;
 
 pub async fn leave(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
-    let Some(manager) = songbird::get(&ctx).await.clone() else {
+    let Some(manager) = songbird::get(ctx).await.clone() else {
         return Err("voice client not init");
     };
 
@@ -17,7 +17,7 @@ pub async fn leave(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
 
     if manager.leave(guild_id).await.is_ok() {
         handler.lock().await.stop();
-        ctx.reply("left u :(", &msg).await;
+        ctx.reply("left u :(", msg).await;
     } else {
         return Err("faild to leave :)");
     }

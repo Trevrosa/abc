@@ -38,14 +38,14 @@ pub async fn blacklist(ctx: &Context, msg: &Message) -> Result<(), &'static str>
 
         if let Some(seven) = blacklisted.iter().position(|x| x == &user) {
             blacklisted.remove(seven);
-            ctx.reply("unblackd", &msg).await;
+            ctx.reply("unblackd", msg).await;
         } else {
             blacklisted.push(user);
-            ctx.reply("blackd", &msg).await;
+            ctx.reply("blackd", msg).await;
         }
     } else {
         let blacklisted = format!("```rust\n{blacklisted:#?}\n```");
-        ctx.reply(blacklisted, &msg).await;
+        ctx.reply(blacklisted, msg).await;
     }
 
     Ok(())

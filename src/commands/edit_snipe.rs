@@ -28,7 +28,7 @@ pub async fn edit_snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str
         )
     };
 
-    ctx.reply(snipe, &msg).await;
+    ctx.reply(snipe, msg).await;
 
     Ok(())
 }

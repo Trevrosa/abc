@@ -20,7 +20,7 @@ pub async fn snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         deleted_msg.timestamp.unix_timestamp()
     );
 
-    ctx.reply(snipe, &msg).await;
+    ctx.reply(snipe, msg).await;
 
     Ok(())
 }

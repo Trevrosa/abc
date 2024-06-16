@@ -14,9 +14,9 @@ pub async fn stop(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         drop(global); // unlock the typemap
 
         ctx.data.write().await.remove::<TrackHandleKey>();
-        ctx.reply("stopd", &msg).await;
+        ctx.reply("stopd", msg).await;
     } else {
-        ctx.reply("im not play anything", &msg).await;
+        ctx.reply("im not play anything", msg).await;
     }
 
     Ok(())

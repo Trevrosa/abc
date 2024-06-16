@@ -12,11 +12,7 @@ pub async fn reply(ctx: &Context, content: impl Into<CreateMessage>, msg: &Messa
 }
 
 /// Will do nothing on error.
-pub async fn edit(
-    ctx: &Context,
-    content: String,
-    msg: &mut Message,
-) {
+pub async fn edit(ctx: &Context, content: String, msg: &mut Message) {
     let _ = msg.edit(&ctx.http, edit_message(content)).await;
 }
 

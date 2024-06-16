@@ -23,12 +23,12 @@ pub async fn seek(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         };
 
         if track.seek_async(Duration::from_secs(to_seek)).await.is_ok() {
-            ctx.reply(format!("seekd to {to_seek} secs"), &msg).await;
+            ctx.reply(format!("seekd to {to_seek} secs"), msg).await;
         } else {
-            ctx.reply("faild to seek", &msg).await;
+            ctx.reply("faild to seek", msg).await;
         }
     } else {
-        ctx.reply("im not play anything", &msg).await;
+        ctx.reply("im not play anything", msg).await;
     }
 
     Ok(())

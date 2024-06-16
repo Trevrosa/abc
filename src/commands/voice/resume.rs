@@ -12,7 +12,7 @@ pub async fn resume(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         };
 
         track.play().unwrap();
-        ctx.reply("resumd", &msg).await;
+        ctx.reply("resumd", msg).await;
     } else {
         return Err("im not play anything");
     }

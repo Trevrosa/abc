@@ -13,7 +13,7 @@ use crate::utils::context::Ext;
 use crate::{HttpClient, TrackHandleKey};
 
 pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
-    let Some(manager) = songbird::get(&ctx).await.clone() else {
+    let Some(manager) = songbird::get(ctx).await.clone() else {
         return Err("voice client not init");
     };
 
@@ -23,7 +23,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         return Err("faild to get guild");
     };
 
-    let mut greet = ctx.reply("downloading for u", &msg).await;
+    let mut greet = ctx.reply("downloading for u", msg).await;
 
     let input: Bytes = if args.len() == 2 {
         if Path::new("current_track").exists() {
@@ -55,7 +55,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
                     };
 
                     // ignore error since command will still work if msg not edited
-                    let _ = ctx.edit_msg(new_msg, &mut greet).await;
+                    let () = ctx.edit_msg(new_msg, &mut greet).await;
                 }
             }
 
@@ -72,15 +72,13 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
                 .read_to_end(&mut bytes)
                 .is_err()
             {
-                ctx.edit_msg("faild to read file", &mut greet)
-                    .await;
+                ctx.edit_msg("faild to read file", &mut greet).await;
                 return Err("");
             }
 
             bytes.into()
         } else {
-            ctx.edit_msg("faild to start download", &mut greet)
-                .await;
+            ctx.edit_msg("faild to start download", &mut greet).await;
             return Err("");
         }
     } else if !msg.attachments.is_empty() {
@@ -100,16 +98,14 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         info!("downloaded {} with reqwest", &msg.attachments[0].url);
 
         let Ok(bytes) = response.bytes().await else {
-            ctx.edit_msg("faild to decode file", &mut greet)
-                .await;
+            ctx.edit_msg("faild to decode file", &mut greet).await;
             drop(global);
             return Err("");
         };
 
         bytes
     } else {
-        ctx.edit_msg("u dont say wat i play", &mut greet)
-            .await;
+        ctx.edit_msg("u dont say wat i play", &mut greet).await;
         return Err("");
     };
 
@@ -157,8 +153,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         ctx.data.write().await.insert::<TrackHandleKey>(track);
         ctx.edit_msg("playing for u!", &mut greet).await;
     } else {
-        ctx.edit_msg("faild to get voice handler", &mut greet)
-            .await;
+        ctx.edit_msg("faild to get voice handler", &mut greet).await;
     }
 
     Ok(())

@@ -15,7 +15,6 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use anyhow::Result;
-use handlers::{CommandHandler, Handler, MessageSniper};
 use serenity::{all::Settings, prelude::*};
 use serenity_ctrlc::Disconnector;
 use songbird::{tracks::TrackHandle, SerenityInit};
@@ -97,9 +96,9 @@ async fn main() -> Result<()> {
     };
 
     let mut client: Client = Client::builder(token, intents)
-        .event_handler(Handler)
-        .event_handler(CommandHandler)
-        .event_handler(MessageSniper)
+        .event_handler(handlers::Client)
+        .event_handler(handlers::Command)
+        .event_handler(handlers::Sniper)
         .type_map_insert::<HttpClient>(reqwest::Client::new())
         .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
         .type_map_insert::<MostRecentEditedMessage>(HashMap::new())

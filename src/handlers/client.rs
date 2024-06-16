@@ -4,10 +4,10 @@ use serenity::{
 };
 use tracing::info;
 
-pub struct Handler;
+pub struct Client;
 
 #[async_trait]
-impl EventHandler for Handler {
+impl EventHandler for Client {
     async fn ready(&self, ctx: Context, _: Ready) {
         ctx.set_presence(
             Some(ActivityData::custom("Disrupting the Social Democrats")),

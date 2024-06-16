@@ -2,10 +2,10 @@ use serenity::async_trait;
 use songbird::{Event, EventContext};
 use tracing::{error, info};
 
-pub struct VoiceHandler;
+pub struct Voice;
 
 #[async_trait]
-impl songbird::EventHandler for VoiceHandler {
+impl songbird::EventHandler for Voice {
     async fn act(&self, event: &EventContext<'_>) -> Option<Event> {
         match event {
             EventContext::SpeakingStateUpdate(speaking) => {
