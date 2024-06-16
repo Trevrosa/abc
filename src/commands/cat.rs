@@ -14,13 +14,13 @@ struct CatImage<'a> {
     height: u32,
 }
 
-pub async fn cat(ctx: Context, msg: Message) {
+pub async fn cat(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
 
     let Some(client) = global.get::<HttpClient>() else {
         drop(global);
-        ctx.reply("failed to get http client", &msg).await;
-        return;
+
+        return Err("failed to get http client");
     };
 
     let Ok(request) = client
@@ -28,13 +28,11 @@ pub async fn cat(ctx: Context, msg: Message) {
         .header("x-api-key", include_str!("../../cat_apikey"))
         .build()
     else {
-        ctx.reply("failed to create request", &msg).await;
-        return;
+        return Err("failed to create request");
     };
 
     let Ok(resp) = client.execute(request).await else {
-        ctx.reply("failed to send request", &msg).await;
-        return;
+        return Err("failed to send request");
     };
 
     let resp = resp.text().await.unwrap();
@@ -42,5 +40,7 @@ pub async fn cat(ctx: Context, msg: Message) {
 
     let new_msg = embed_message("car", resp[0].url);
 
-    ctx.reply(new_msg, &msg).await;
+    ctx.reply(new_msg, msg).await;
+
+    Ok(())
 }

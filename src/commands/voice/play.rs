@@ -12,17 +12,15 @@ use tracing::info;
 use crate::utils::context::Ext;
 use crate::{HttpClient, TrackHandleKey};
 
-pub async fn play(ctx: Context, msg: Message) {
+pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let Some(manager) = songbird::get(&ctx).await.clone() else {
-        ctx.reply("voice client not init", &msg).await;
-        return;
+        return Err("voice client not init");
     };
 
     let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
 
     let Some(guild) = msg.guild_id else {
-        ctx.reply("faild to get guild", &msg).await;
-        return;
+        return Err("faild to get guild");
     };
 
     let mut greet = ctx.reply("downloading for u", &msg).await;
@@ -62,8 +60,8 @@ pub async fn play(ctx: Context, msg: Message) {
             }
 
             if !downloader.wait().unwrap().success() {
-                ctx.edit_msg("download faild", &mut greet).await.unwrap();
-                return;
+                ctx.edit_msg("download faild", &mut greet).await;
+                return Err("");
             }
 
             info!("downloaded {} with yt-dlp", args[1]);
@@ -75,17 +73,15 @@ pub async fn play(ctx: Context, msg: Message) {
                 .is_err()
             {
                 ctx.edit_msg("faild to read file", &mut greet)
-                    .await
-                    .unwrap();
-                return;
+                    .await;
+                return Err("");
             }
 
             bytes.into()
         } else {
             ctx.edit_msg("faild to start download", &mut greet)
-                .await
-                .unwrap();
-            return;
+                .await;
+            return Err("");
         }
     } else if !msg.attachments.is_empty() {
         let global = ctx.data.try_read().unwrap();
@@ -93,35 +89,33 @@ pub async fn play(ctx: Context, msg: Message) {
 
         let Ok(request) = client.get(&msg.attachments[0].url).build() else {
             drop(global);
-            return;
+            return Err("faild to create request");
         };
 
         let Ok(response) = client.execute(request).await else {
             drop(global);
-            return;
+            return Err("faild to download");
         };
 
         info!("downloaded {} with reqwest", &msg.attachments[0].url);
 
         let Ok(bytes) = response.bytes().await else {
             ctx.edit_msg("faild to decode file", &mut greet)
-                .await
-                .unwrap();
+                .await;
             drop(global);
-            return;
+            return Err("");
         };
 
         bytes
     } else {
         ctx.edit_msg("u dont say wat i play", &mut greet)
-            .await
-            .unwrap();
-        return;
+            .await;
+        return Err("");
     };
 
     let Ok(channels) = guild.channels(&ctx).await else {
-        ctx.reply("faild to get channels", &msg).await;
-        return;
+        ctx.edit_msg("faild to get channels", &mut greet).await;
+        return Err("");
     };
 
     let mut channels = channels.iter();
@@ -130,13 +124,13 @@ pub async fn play(ctx: Context, msg: Message) {
     if manager.get(guild).is_none() {
         let Some(channel) = ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels)
         else {
-            ctx.reply("u arent in a vc", &msg).await;
-            return;
+            ctx.edit_msg("u arent in a vc", &mut greet).await;
+            return Err("");
         };
 
         if manager.join(guild, channel.id).await.is_err() {
-            ctx.reply("faild to join u", &msg).await;
-            return;
+            ctx.edit_msg("faild to join u", &mut greet).await;
+            return Err("");
         };
     }
 
@@ -148,23 +142,24 @@ pub async fn play(ctx: Context, msg: Message) {
             let Some(channel) =
                 ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels)
             else {
-                ctx.reply("u arent in a vc", &msg).await;
-                return;
+                ctx.edit_msg("u arent in a vc", &mut greet).await;
+                return Err("");
             };
 
             if handler.join(channel.id).await.is_err() {
-                ctx.reply("faild to join u", &msg).await;
-                return;
+                ctx.edit_msg("faild to join u", &mut greet).await;
+                return Err("");
             };
         }
 
         let track = handler.play_only_input(input.into());
 
         ctx.data.write().await.insert::<TrackHandleKey>(track);
-        ctx.edit_msg("playing for u!", &mut greet).await.unwrap();
+        ctx.edit_msg("playing for u!", &mut greet).await;
     } else {
         ctx.edit_msg("faild to get voice handler", &mut greet)
-            .await
-            .unwrap();
+            .await;
     }
+
+    Ok(())
 }

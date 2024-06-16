@@ -10,13 +10,41 @@ use crate::{utils::context::Ext, Blacklisted, SEVEN};
 #[derive(Debug)]
 pub struct CommandHandler;
 
+#[inline]
+pub async fn handle_cmd(cmd: &str, ctx: &Context, msg: &Message) -> Result<(), &'static str> {
+    match cmd {
+        // misc commands
+        "cat" => commands::cat(&ctx, &msg).await,
+        "black" => commands::blacklist(&ctx, &msg).await,
+
+        "join" => commands::join(&ctx, &msg).await,
+        "leave" => commands::leave(&ctx, &msg).await,
+
+        "snipe" => commands::snipe(&ctx, &msg).await,
+        "editsnipe" => commands::edit_snipe(&ctx, &msg).await,
+
+        // voice commands
+        "play" => commands::voice::play(&ctx, &msg).await,
+        "pause" => commands::voice::pause(&ctx, &msg).await,
+        "resume" | "unpause" => commands::voice::resume(&ctx, &msg).await,
+        "status" => commands::voice::status(&ctx, &msg).await,
+        "loop" => commands::voice::set_loop(&ctx, &msg).await,
+        "stop" => commands::voice::stop(&ctx, &msg).await,
+        "seek" => commands::voice::seek(&ctx, &msg).await,
+
+        // do nothing if not matched
+        &_ => Ok(()),
+    }
+}
+
 #[async_trait]
 impl EventHandler for CommandHandler {
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.guild_id.is_none()
-            && msg.author != **ctx.cache.current_user()
-            && msg.author.id != OWNER
-        {
+        if msg.author == **ctx.cache.current_user() {
+            return;
+        }
+
+        if msg.guild_id.is_none() && msg.author.id != OWNER {
             if msg.author.id == SEVEN {
                 ctx.reply("wasup boss", &msg).await;
             } else {
@@ -41,30 +69,22 @@ impl EventHandler for CommandHandler {
 
         info!("received cmd '{}'", &msg.content);
 
-        match &msg.content.split(' ').collect::<Vec<&str>>()[0][1..] {
-            // misc commands
-            "test" => commands::test(ctx, msg).await,
-            "cat" => commands::cat(ctx, msg).await,
-            "black" => commands::blacklist(ctx, msg).await,
-
-            "join" => commands::join(ctx, msg).await,
-            "leave" => commands::leave(ctx, msg).await,
-
-            "snipe" => commands::snipe(ctx, msg).await,
-            "editsnipe" => commands::edit_snipe(ctx, msg).await,
-
-            // voice commands
-            "play" => commands::voice::play(ctx, msg).await,
-            "pause" => commands::voice::pause(ctx, msg).await,
-            "resume" | "unpause" => commands::voice::resume(ctx, msg).await,
-            "status" => commands::voice::status(ctx, msg).await,
-            "loop" => commands::voice::set_loop(ctx, msg).await,
-            "stop" => commands::voice::stop(ctx, msg).await,
-            "seek" => commands::voice::seek(ctx, msg).await,
-
-            // do nothing if not matched
-            &_ => (),
+        let cmd = &msg.content.split(' ').collect::<Vec<&str>>()[0][1..];
+        
+        // test is a special command since it can run other commands,
+        // and needs to be handled separate from `handle_cmd` since 
+        // `async fn`s cannot be recursive.
+        let result: Result<(), &str> = if cmd == "test" {
+            commands::test(&ctx, &msg).await
+        }
+        else {
+            handle_cmd(cmd, &ctx, &msg).await
         };
+
+        // if error == "", no response
+        if let Err(error) = result {
+            ctx.reply(error, &msg).await;
+        }
 
         typing.stop();
     }

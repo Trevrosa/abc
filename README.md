@@ -4,7 +4,7 @@
 each module in `src/commands` must have a function with this signature:
 
 ```rust
-fn command(ctx: Context, msg: Message) -> impl Future<Output = ()>
+async fn command(ctx: &Context, msg: &Message) -> Result<(), &'static str>
 ```
 (where `Context` is `serenity::client::Context`, and `Message` is `serenity::model::channel::Message`)
 

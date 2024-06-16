@@ -3,18 +3,19 @@ use serenity::all::{Context, Message};
 use crate::utils::context::Ext;
 use crate::TrackHandleKey;
 
-pub async fn pause(ctx: Context, msg: Message) {
+pub async fn pause(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
 
     if global.contains_key::<TrackHandleKey>() {
         let Some(track) = global.get::<TrackHandleKey>() else {
-            ctx.reply("faild to pause", &msg).await;
-            return;
+            return Err("faild to pause");
         };
 
         track.pause().unwrap();
         ctx.reply("pausd", &msg).await;
     } else {
-        ctx.reply("im not play anything", &msg).await;
+        return Err("im not play anything");
     }
+
+    Ok(())
 }

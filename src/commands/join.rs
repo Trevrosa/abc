@@ -2,15 +2,13 @@ use serenity::all::{ChannelId, ChannelType, Context, Message};
 
 use crate::utils::context::Ext;
 
-pub async fn join(ctx: Context, msg: Message) {
+pub async fn join(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let Some(guild) = msg.guild_id else {
-        ctx.reply("faild to get guild", &msg).await;
-        return;
-    };
+        return Err("faild to get guild");
+    };  
 
     let Ok(channels) = guild.channels(&ctx).await else {
-        ctx.reply("faild to get channels", &msg).await;
-        return;
+        return Err("faild to get channels");
     };
 
     let mut channels = channels.iter();
@@ -27,13 +25,11 @@ pub async fn join(ctx: Context, msg: Message) {
         };
 
         let Ok(id) = id else {
-            ctx.reply("not a vc", &msg).await;
-            return;
+            return Err("not a vc");
         };
 
         let Ok(channel) = ctx.http.get_channel(ChannelId::new(id)).await else {
-            ctx.reply("channel not exist", &msg).await;
-            return;
+            return Err("channel not exist");
         };
 
         let channel = channel.guild().unwrap();
@@ -49,14 +45,12 @@ pub async fn join(ctx: Context, msg: Message) {
     };
 
     let Some(channel) = channel else {
-        ctx.reply("u arent in a vc", &msg).await;
-        return;
+        return Err("u arent in a vc");
     };
 
     if let Some(manager) = songbird::get(&ctx).await.clone() {
         let Some(guild) = msg.guild_id else {
-            ctx.reply("faild to get guild", &msg).await;
-            return;
+            return Err("faild to get guild");
         };
 
         if manager.join(guild, channel.id).await.is_ok() {
@@ -65,6 +59,8 @@ pub async fn join(ctx: Context, msg: Message) {
             ctx.reply("faild to join", &msg).await;
         }
     } else {
-        ctx.reply("voice manager failed", &msg).await;
+        return Err("voice manager failed");
     }
+
+    Ok(())
 }

@@ -5,24 +5,21 @@ use serenity::all::{Context, Message};
 use crate::utils::context::Ext;
 use crate::TrackHandleKey;
 
-pub async fn seek(ctx: Context, msg: Message) {
+pub async fn seek(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let args: Vec<&str> = msg.content.trim().split(' ').collect();
     if args.len() != 2 {
-        ctx.reply("u dont say wat i seek to", &msg).await;
-        return;
+        return Err("u dont say wat i seek to");
     }
 
     let Ok(to_seek) = args[1].parse() else {
-        ctx.reply("not number", &msg).await;
-        return;
+        return Err("not number");
     };
 
     let global = ctx.data.try_read().unwrap();
 
     if global.contains_key::<TrackHandleKey>() {
         let Some(track) = global.get::<TrackHandleKey>() else {
-            ctx.reply("faild to pause", &msg).await;
-            return;
+            return Err("song ended..");
         };
 
         if track.seek_async(Duration::from_secs(to_seek)).await.is_ok() {
@@ -33,4 +30,6 @@ pub async fn seek(ctx: Context, msg: Message) {
     } else {
         ctx.reply("im not play anything", &msg).await;
     }
+
+    Ok(())
 }

@@ -11,12 +11,13 @@ pub async fn reply(ctx: &Context, content: impl Into<CreateMessage>, msg: &Messa
     msg.channel_id.send_message(&ctx, new_msg).await.unwrap()
 }
 
+/// Will do nothing on error.
 pub async fn edit(
     ctx: &Context,
     content: String,
     msg: &mut Message,
-) -> Result<(), serenity::Error> {
-    msg.edit(&ctx.http, edit_message(content)).await
+) {
+    let _ = msg.edit(&ctx.http, edit_message(content)).await;
 }
 
 pub fn edit_message(content: String) -> EditMessage {

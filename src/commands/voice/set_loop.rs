@@ -4,18 +4,16 @@ use songbird::tracks::LoopState;
 use crate::utils::context::Ext;
 use crate::TrackHandleKey;
 
-pub async fn set_loop(ctx: Context, msg: Message) {
+pub async fn set_loop(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
 
     if global.contains_key::<TrackHandleKey>() {
         let Some(track) = global.get::<TrackHandleKey>() else {
-            ctx.reply("faild to loop", &msg).await;
-            return;
+            return Err("faild to loop");
         };
 
         let Ok(track_info) = track.get_info().await else {
-            ctx.reply("im not play anything", &msg).await;
-            return;
+            return Err("im not play anything");
         };
 
         if track_info.loops == LoopState::Infinite {
@@ -26,6 +24,8 @@ pub async fn set_loop(ctx: Context, msg: Message) {
             ctx.reply("looping", &msg).await;
         }
     } else {
-        ctx.reply("im not play anything", &msg).await;
+        return Err("im not play anything");
     }
+
+    Ok(())
 }

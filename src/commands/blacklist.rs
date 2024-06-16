@@ -2,10 +2,9 @@ use serenity::all::{Context, Guild, Message, UserId};
 
 use crate::{utils::context::Ext, Blacklisted, OWNER};
 
-pub async fn blacklist(ctx: Context, msg: Message) {
+pub async fn blacklist(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     if msg.author.id != OWNER {
-        ctx.reply("u canot", &msg).await;
-        return;
+        return Err("u canot");
     }
 
     let mut global = ctx.data.write().await;
@@ -19,26 +18,22 @@ pub async fn blacklist(ctx: Context, msg: Message) {
 
         let user: u64 = if let Ok(user) = args[1].parse::<u64>() {
             if !members.contains_key(&UserId::new(user)) {
-                ctx.reply("that not real", &msg).await;
-                return;
+                return Err("that not real");
             }
 
             user
         } else if args[1].starts_with("<@") {
             let Ok(user) = args[1][2..args[1].len() - 1].parse::<u64>() else {
-                ctx.reply("that not real", &msg).await;
-                return;
+                return Err("that not real");
             };
 
             if !members.contains_key(&UserId::new(user)) {
-                ctx.reply("that not real", &msg).await;
-                return;
+                return Err("that not real");
             }
 
             user
         } else {
-            ctx.reply("that not real", &msg).await;
-            return;
+            return Err("that not real");
         };
 
         if let Some(seven) = blacklisted.iter().position(|x| x == &user) {
@@ -52,4 +47,6 @@ pub async fn blacklist(ctx: Context, msg: Message) {
         let blacklisted = format!("```rust\n{blacklisted:#?}\n```");
         ctx.reply(blacklisted, &msg).await;
     }
+
+    Ok(())
 }
