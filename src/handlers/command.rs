@@ -54,16 +54,17 @@ impl EventHandler for Command {
             return;
         }
 
-        let msg = if msg.guild_id.is_none() {
-            let mut msg = msg;
-            // if in dm, make guild the default one.
-            // this will work only if OWNER is in DEFAULT_GUILD
-            msg.guild_id = Some(DEFAULT_GUILD.into());
+        // TODO: make dm cmd work
+        // let msg = if msg.guild_id.is_none() {
+        //     let mut msg = msg;
+        //     msg.guild_id = Some(DEFAULT_GUILD.into());
 
-            msg
-        } else {
-            msg
-        };
+        //     msg
+        // } else {
+        //     msg
+        // };
+
+        // info!("c {} g {:?}", msg.channel_id, msg.guild_id);
 
         let typing = msg.channel_id.start_typing(&ctx.http);
 
