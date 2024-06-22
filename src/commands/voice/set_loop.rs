@@ -18,9 +18,13 @@ pub async fn set_loop(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
 
         if track_info.loops == LoopState::Infinite {
             track.disable_loop().unwrap();
+            drop(global);
+
             ctx.reply("stopd looping", msg).await;
         } else {
             track.enable_loop().unwrap();
+            drop(global);
+
             ctx.reply("looping", msg).await;
         }
     } else {

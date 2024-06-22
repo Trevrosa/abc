@@ -6,19 +6,19 @@ pub struct CreateMessage(pub serenity::all::CreateMessage);
 
 impl From<&str> for CreateMessage {
     fn from(value: &str) -> Self {
-        CreateMessage(serenity::all::CreateMessage::new().content(value))
+        Self(serenity::all::CreateMessage::new().content(value))
     }
 }
 
 impl From<String> for CreateMessage {
     fn from(value: String) -> Self {
-        CreateMessage(serenity::all::CreateMessage::new().content(value))
+        Self(serenity::all::CreateMessage::new().content(value))
     }
 }
 
 impl From<serenity::all::CreateMessage> for CreateMessage {
     fn from(value: serenity::all::CreateMessage) -> Self {
-        CreateMessage(value)
+        Self(value)
     }
 }
 
@@ -26,9 +26,9 @@ impl From<serenity::all::CreateMessage> for CreateMessage {
 pub trait Ext {
     fn reply(
         &self,
-        content: impl Into<CreateMessage>,
+        content: impl Into<CreateMessage> + Send,
         message: &Message,
-    ) -> impl Future<Output = Message>;
+    ) -> impl Future<Output = Message> + Send;
     fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()>;
     fn find_user_channel<'a>(
         &self,
@@ -41,9 +41,9 @@ pub trait Ext {
 impl Ext for Context {
     fn reply(
         &self,
-        content: impl Into<CreateMessage>,
+        content: impl Into<CreateMessage> + Send,
         msg: &Message,
-    ) -> impl Future<Output = Message> {
+    ) -> impl Future<Output = Message> + Send {
         super::internal::reply(self, content, msg)
     }
 

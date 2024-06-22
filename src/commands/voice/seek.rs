@@ -22,7 +22,10 @@ pub async fn seek(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             return Err("song ended..");
         };
 
-        if track.seek_async(Duration::from_secs(to_seek)).await.is_ok() {
+        let seek = track.seek_async(Duration::from_secs(to_seek)).await;
+        drop(global);
+
+        if seek.is_ok() {
             ctx.reply(format!("seekd to {to_seek} secs"), msg).await;
         } else {
             ctx.reply("faild to seek", msg).await;

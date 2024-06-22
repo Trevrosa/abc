@@ -12,6 +12,8 @@ pub async fn pause(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         };
 
         track.pause().unwrap();
+        drop(global);
+
         ctx.reply("pausd", msg).await;
     } else {
         return Err("im not play anything");

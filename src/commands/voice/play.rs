@@ -13,7 +13,7 @@ use crate::utils::context::Ext;
 use crate::{HttpClient, TrackHandleKey};
 
 pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
-    let Some(manager) = songbird::get(ctx).await.clone() else {
+    let Some(manager) = songbird::get(ctx).await else {
         return Err("voice client not init");
     };
 
@@ -149,6 +149,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         }
 
         let track = handler.play_only_input(input.into());
+        drop(handler);
 
         ctx.data.write().await.insert::<TrackHandleKey>(track);
         ctx.edit_msg("playing for u!", &mut greet).await;

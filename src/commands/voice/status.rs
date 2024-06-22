@@ -11,8 +11,10 @@ pub async fn status(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             return Err("song ended..");
         };
 
-        ctx.reply(format!("```rust\n{:#?}\n```", track.get_info().await), msg)
-            .await;
+        let status = track.get_info().await;
+        drop(global);
+
+        ctx.reply(format!("```rust\n{status:#?}\n```",), msg).await;
     } else {
         return Err("im not play anything");
     }

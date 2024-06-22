@@ -2,6 +2,7 @@ use serenity::all::{Context, Message};
 
 use crate::utils::{context::Ext, sniping::MostRecentEditedMessage};
 
+#[allow(clippy::significant_drop_tightening)]
 pub async fn edit_snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
 

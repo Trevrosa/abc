@@ -1,4 +1,4 @@
-#![warn(clippy::pedantic, clippy::nursery)]
+#![warn(clippy::pedantic)]
 #![deny(clippy::disallowed_methods)]
 #![allow(
     clippy::missing_errors_doc,
@@ -83,8 +83,9 @@ async fn main() -> Result<()> {
     let mut cache_settings = Settings::default();
     cache_settings.max_messages = 50;
 
-    let blacklisted: Vec<u64> = if let Ok(serialized) = std::fs::read("blacklisted") {
-        match bincode::deserialize(&serialized) {
+    let blacklisted: Vec<u64> = std::fs::read("blacklisted").map_or_else(
+        |_| Vec::new(),
+        |serialized| match bincode::deserialize(&serialized) {
             Ok(blacklisted) => {
                 info!("loaded blacklisted users");
                 blacklisted
@@ -93,10 +94,8 @@ async fn main() -> Result<()> {
                 error!("failed to load blacklisted users ({e}); using empty");
                 Vec::new()
             }
-        }
-    } else {
-        Vec::new()
-    };
+        },
+    );
 
     let mut client: Client = Client::builder(token, intents)
         .event_handler(handlers::Client)

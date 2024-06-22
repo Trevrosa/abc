@@ -8,7 +8,7 @@ use super::context::CreateMessage;
 /// will panic if message not sent
 pub(super) async fn reply(
     ctx: &Context,
-    content: impl Into<CreateMessage>,
+    content: impl Into<CreateMessage> + Send,
     msg: &Message,
 ) -> Message {
     let new_msg = content.into().0.reference_message(msg);

@@ -38,9 +38,13 @@ pub async fn blacklist(ctx: &Context, msg: &Message) -> Result<(), &'static str>
 
         if let Some(seven) = blacklisted.iter().position(|x| x == &user) {
             blacklisted.remove(seven);
+            drop(global);
+
             ctx.reply("unblackd", msg).await;
         } else {
             blacklisted.push(user);
+            drop(global);
+
             ctx.reply("blackd", msg).await;
         }
     } else {
@@ -49,6 +53,8 @@ pub async fn blacklist(ctx: &Context, msg: &Message) -> Result<(), &'static str>
             .map(|id| (id, ctx.cache.user(*id).unwrap().clone().name))
             .collect();
         let blacklisted = format!("```rust\n{blacklisted:#?}\n```");
+        drop(global);
+
         ctx.reply(blacklisted, msg).await;
     }
 
