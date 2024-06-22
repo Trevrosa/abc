@@ -4,7 +4,7 @@ use serenity::{
 };
 use tracing::info;
 
-use crate::{commands, DEFAULT_GUILD, OWNER};
+use crate::{commands, OWNER};
 use crate::{utils::context::Ext, Blacklisted, SEVEN};
 
 #[derive(Debug)]

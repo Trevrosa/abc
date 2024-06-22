@@ -47,9 +47,6 @@ pub const SEVEN: u64 = 674143957755756545;
 #[allow(clippy::unreadable_literal)]
 pub const OWNER: u64 = 758926553454870529;
 
-#[allow(clippy::unreadable_literal)]
-pub const DEFAULT_GUILD: u64 = 1241343358312644710;
-
 // serialize blacklisted users to disk, then disconnect all shards
 async fn end_handler(disconnector: Option<Disconnector>) {
     if let Some(disconnector) = disconnector {
