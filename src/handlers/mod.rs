@@ -1,5 +1,4 @@
 mod command;
-pub use command::handle_cmd;
 pub use command::Command;
 
 mod sniper;

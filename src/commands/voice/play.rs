@@ -32,6 +32,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
 
         let downloader = Command::new("/usr/bin/yt-dlp")
             // ba* = choose best quality format with audio, which might be video
+            // see: https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
             .args([args[1], "-o", "current_track", "-f", "ba*"])
             .stdout(Stdio::piped())
             .stderr(stdout())
@@ -54,8 +55,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
                         )
                     };
 
-                    // ignore error since command will still work if msg not edited
-                    let () = ctx.edit_msg(new_msg, &mut greet).await;
+                    ctx.edit_msg(new_msg, &mut greet).await;
                 }
             }
 

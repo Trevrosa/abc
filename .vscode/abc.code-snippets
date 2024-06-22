@@ -22,7 +22,7 @@
 		"body": [
 			"use serenity::all::{Context, Message};",
 			"",
-			"pub async fn $1(ctx: Context, msg: Message) -> Result<(), &str> {",
+			"pub async fn $1(ctx: &Context, msg: &Message) -> Result<(), &'static str> {",
 			"\tOk(())",
 			"}",
 		]

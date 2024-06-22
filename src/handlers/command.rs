@@ -4,7 +4,7 @@ use serenity::{
 };
 use tracing::info;
 
-use crate::{commands, OWNER};
+use crate::{commands, DEFAULT_GUILD, OWNER};
 use crate::{utils::context::Ext, Blacklisted, SEVEN};
 
 #[derive(Debug)]
@@ -14,6 +14,7 @@ pub struct Command;
 pub async fn handle_cmd(cmd: &str, ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     match cmd {
         // misc commands
+        "test" => commands::test(ctx, msg).await,
         "cat" => commands::cat(ctx, msg).await,
         "black" => commands::blacklist(ctx, msg).await,
 
@@ -53,6 +54,17 @@ impl EventHandler for Command {
             return;
         }
 
+        let msg = if msg.guild_id.is_none() {
+            let mut msg = msg;
+            // if in dm, make guild the default one.
+            // this will work only if OWNER is in DEFAULT_GUILD
+            msg.guild_id = Some(DEFAULT_GUILD.into());
+
+            msg
+        } else {
+            msg
+        };
+
         let typing = msg.channel_id.start_typing(&ctx.http);
 
         // here, we want to wait instead of panicking.
@@ -71,14 +83,7 @@ impl EventHandler for Command {
 
         let cmd = &msg.content.split(' ').collect::<Vec<&str>>()[0][1..];
 
-        // test is a special command since it can run other commands,
-        // and needs to be handled separate from `handle_cmd` since
-        // `async fn`s cannot be recursive.
-        let result: Result<(), &str> = if cmd == "test" {
-            commands::test(&ctx, &msg).await
-        } else {
-            handle_cmd(cmd, &ctx, &msg).await
-        };
+        let result: Result<(), &str> = handle_cmd(cmd, &ctx, &msg).await;
 
         // if error == "", no response
         if let Err(error) = result {

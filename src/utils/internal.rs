@@ -6,21 +6,25 @@ use super::context::CreateMessage;
 
 /// # Panics
 /// will panic if message not sent
-pub async fn reply(ctx: &Context, content: impl Into<CreateMessage>, msg: &Message) -> Message {
+pub(super) async fn reply(
+    ctx: &Context,
+    content: impl Into<CreateMessage>,
+    msg: &Message,
+) -> Message {
     let new_msg = content.into().0.reference_message(msg);
     msg.channel_id.send_message(&ctx, new_msg).await.unwrap()
 }
 
 /// Will do nothing on error.
-pub async fn edit(ctx: &Context, content: String, msg: &mut Message) {
+pub(super) async fn edit(ctx: &Context, content: String, msg: &mut Message) {
     let _ = msg.edit(&ctx.http, edit_message(content)).await;
 }
 
-pub fn edit_message(content: String) -> EditMessage {
+pub(super) fn edit_message(content: String) -> EditMessage {
     EditMessage::new().content(content)
 }
 
-pub fn find_user_channel<'a>(
+pub(super) fn find_user_channel<'a>(
     ctx: &Context,
     user: &User,
     kind: ChannelType,

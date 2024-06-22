@@ -44,6 +44,10 @@ pub async fn blacklist(ctx: &Context, msg: &Message) -> Result<(), &'static str>
             ctx.reply("blackd", msg).await;
         }
     } else {
+        let blacklisted: Vec<(&u64, String)> = blacklisted
+            .iter()
+            .map(|id| (id, ctx.cache.user(*id).unwrap().clone().name))
+            .collect();
         let blacklisted = format!("```rust\n{blacklisted:#?}\n```");
         ctx.reply(blacklisted, msg).await;
     }
