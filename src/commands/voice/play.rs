@@ -127,7 +127,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         if manager.join(guild, channel.id).await.is_err() {
             ctx.edit_msg("faild to join u", &mut greet).await;
             return Err("");
-        };
+        }
     }
 
     if let Some(handler) = manager.get(guild) {
@@ -145,7 +145,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             if handler.join(channel.id).await.is_err() {
                 ctx.edit_msg("faild to join u", &mut greet).await;
                 return Err("");
-            };
+            }
         }
 
         let track = handler.play_only_input(input.into());
