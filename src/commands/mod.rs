@@ -20,3 +20,6 @@ pub use snipe::snipe;
 
 mod blacklist;
 pub use blacklist::blacklist;
+
+mod get_song;
+pub use get_song::get_song;

@@ -1,12 +1,12 @@
 use std::{
-    fs::{remove_file, File},
-    io::{stdout, BufRead, BufReader, Read},
+    io::{stdout, BufRead, BufReader},
     path::Path,
     process::{Command, Stdio},
 };
 
 use bytes::Bytes;
 use serenity::all::{ChannelType, Context, Message};
+use tokio::{fs::{remove_file, File}, io::AsyncReadExt};
 use tracing::info;
 
 use crate::utils::context::Ext;
@@ -25,9 +25,10 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
 
     let mut greet = ctx.reply("downloading for u", msg).await;
 
+    // TODO: create one function so that get_song and this command can share it.
     let input: Bytes = if args.len() == 2 {
         if Path::new("current_track").exists() {
-            remove_file("current_track").unwrap();
+            remove_file("current_track").await.unwrap();
         }
 
         let downloader = Command::new("/usr/bin/yt-dlp")
@@ -60,16 +61,17 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             }
 
             if !downloader.wait().unwrap().success() {
-                ctx.edit_msg("download faild", &mut greet).await;
-                return Err("");
+                return Err("download faild");
             }
 
             info!("downloaded {} with yt-dlp", args[1]);
             let mut bytes: Vec<u8> = Vec::new();
 
             if File::open("current_track")
+                .await
                 .unwrap()
                 .read_to_end(&mut bytes)
+                .await
                 .is_err()
             {
                 ctx.edit_msg("faild to read file", &mut greet).await;
