@@ -13,6 +13,8 @@ or be a module that re-exports other modules.
 *note that new modules in `src/commands` must be reflected in `crate::handlers::CommandHandler` manually.*
 
 ## building
+- install [songbird](https://github.com/serenity-rs/songbird?tab=readme-ov-file#dependencies) dependencies (`apt install build-essential autoconf automake libtool m4`) 
+- install [mold](https://github.com/rui314/mold)
 - create file `token` at project root and put your bot token in
 - create file `cat_apikey` at project root and put your [cat api key](https://thecatapi.com) in
 - install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and make sure the binary is available in `/usr/bin`

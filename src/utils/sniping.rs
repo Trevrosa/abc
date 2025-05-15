@@ -1,5 +1,7 @@
-use serenity::all::{GuildId, Message, Timestamp};
-use songbird::typemap::TypeMapKey;
+use serenity::{
+    all::{GuildId, Message, Timestamp},
+    prelude::TypeMapKey,
+};
 use std::collections::HashMap;
 
 pub struct MostRecentDeletedMessage;

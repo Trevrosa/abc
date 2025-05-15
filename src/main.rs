@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use anyhow::Result;
+use bincode::config;
 use serenity::{all::Settings, prelude::*};
 use serenity_ctrlc::Disconnector;
 use songbird::{tracks::TrackHandle, SerenityInit};
@@ -51,7 +52,11 @@ pub const OWNER: u64 = 758926553454870529;
 async fn end_handler(disconnector: Option<Disconnector>) {
     if let Some(disconnector) = disconnector {
         if let Ok(global) = disconnector.data.try_read() {
-            let blacklisted = bincode::serialize(global.get::<Blacklisted>().unwrap()).unwrap();
+            let blacklisted = bincode::serde::encode_to_vec(
+                global.get::<Blacklisted>().unwrap(),
+                config::legacy(),
+            )
+            .unwrap();
             std::fs::write("blacklisted", blacklisted).unwrap();
 
             info!("saved blacklisted users");
@@ -81,9 +86,9 @@ async fn main() -> Result<()> {
     cache_settings.max_messages = 50;
 
     let blacklisted: Vec<u64> = std::fs::read("blacklisted").map_or_else(
-        |_| Vec::new(),
-        |serialized| match bincode::deserialize(&serialized) {
-            Ok(blacklisted) => {
+        |_e| Vec::new(),
+        |serialized| match bincode::serde::decode_from_slice(&serialized, config::legacy()) {
+            Ok((blacklisted, _len)) => {
                 info!("loaded blacklisted users");
                 blacklisted
             }

@@ -5,8 +5,7 @@ use std::{
     sync::{Arc, Weak},
 };
 
-use serenity::{gateway::ShardManager, Client};
-use songbird::typemap::TypeMap;
+use serenity::{gateway::ShardManager, prelude::TypeMap, Client};
 use tokio::sync::RwLock;
 
 pub struct Disconnector {
