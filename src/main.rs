@@ -54,7 +54,7 @@ async fn end_handler(disconnector: Option<Disconnector>) {
         if let Ok(global) = disconnector.data.try_read() {
             let blacklisted = bincode::serde::encode_to_vec(
                 global.get::<Blacklisted>().unwrap(),
-                config::legacy(),
+                config::standard(),
             )
             .unwrap();
             std::fs::write("blacklisted", blacklisted).unwrap();
@@ -87,7 +87,7 @@ async fn main() -> Result<()> {
 
     let blacklisted: Vec<u64> = std::fs::read("blacklisted").map_or_else(
         |_e| Vec::new(),
-        |serialized| match bincode::serde::decode_from_slice(&serialized, config::legacy()) {
+        |serialized| match bincode::serde::decode_from_slice(&serialized, config::standard()) {
             Ok((blacklisted, _len)) => {
                 info!("loaded blacklisted users");
                 blacklisted
