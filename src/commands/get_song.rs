@@ -76,8 +76,14 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
         &[]
     };
 
-    ctx.yt_dlp(url, Some(output), download_format, Some(audio_only_args), &mut greet)
-        .await?;
+    ctx.yt_dlp(
+        url,
+        Some(output),
+        download_format,
+        Some(audio_only_args),
+        &mut greet,
+    )
+    .await?;
 
     let Ok(files) = download_path.read_dir() else {
         return Err("could not find download folder");
@@ -120,7 +126,7 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
                     .await;
             } else {
                 let url = Path::new(external_host).join(file.file_name());
-                let url = url.to_string_lossy().replace(" ", "%20");
+                let url = url.to_string_lossy().replace(' ', "%20");
                 ctx.reply(format!("done! {url}"), msg).await;
             }
         } else {

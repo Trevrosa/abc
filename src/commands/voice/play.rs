@@ -29,7 +29,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             remove_file("current_track").await.unwrap();
         }
 
-        // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time 
+        // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time
         ctx.yt_dlp(args[1], Some("current_track"), "ba*", None, &mut greet)
             .await?;
 
