@@ -1,5 +1,8 @@
 use std::{
-    env, io::{stdout, BufRead, BufReader}, path::Path, process::{Command, Stdio}
+    env,
+    io::{stdout, BufRead, BufReader},
+    path::Path,
+    process::{Command, Stdio},
 };
 
 use serenity::all::{Context, CreateAttachment, CreateMessage, Message};
@@ -10,8 +13,8 @@ use crate::utils::context::Ext;
 
 pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
-    if args.len() != 2 {
-        return Err("expected 1 argument");
+    if args.len() < 2 {
+        return Err("expected at least 1 argument");
     }
 
     let url = args[1];
@@ -41,10 +44,24 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     let output = idpath.join("%(title)s [%(id)s].%(ext)s");
     let output = output.to_string_lossy();
 
+    // `ba` by default, `ba*`
+    let download_format = args
+        .get(2)
+        .iter()
+        .flat_map(|c| {
+            if c.starts_with("vid") {
+                Some("ba*")
+            } else {
+                None
+            }
+        })
+        .next()
+        .unwrap_or("ba");
+
     let downloader = Command::new("/usr/bin/yt-dlp")
         // ba* = choose best quality format with audio, which might be video
         // see: https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
-        .args([args[1], "-o", &output, "-f", "ba*"])
+        .args([args[1], "-o", &output, "-f", download_format])
         .stdout(Stdio::piped())
         .stderr(stdout())
         .spawn();
@@ -79,7 +96,7 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
         return Err("download faild");
     }
 
-    info!("downloaded {} with yt-dlp", args[1]);
+    info!("downloaded {url} with yt-dlp");
 
     let Ok(mut files) = idpath.read_dir() else {
         return Err("could not find download folder");
@@ -89,7 +106,7 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     };
 
     const DISCORD_LIMIT: u64 = 10 * 1000 * 1000;
-    if file.metadata().is_ok_and(|m|m.len() < DISCORD_LIMIT) {
+    if file.metadata().is_ok_and(|m| m.len() < DISCORD_LIMIT) {
         // we can upload to discord
         let Ok(attachment) = CreateAttachment::path(file.path()).await else {
             return Err("failed to create attachment");
@@ -103,13 +120,15 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
             error!("error moving file to shared dir {shared_dir:?}: {err:#?}");
             return Err("could not move file to shared dir");
         }
-        
+
         let external_host = include_str!("../../external_host").trim();
         if external_host.is_empty() {
-            ctx.reply("uploaded to shared dir. (file was >10mb)", msg).await;
+            ctx.reply("uploaded to shared dir. (file was >10mb)", msg)
+                .await;
         } else {
             let url = Path::new(external_host).join(file.file_name());
-            ctx.reply(format!("done! {}", url.to_string_lossy()), msg).await;
+            ctx.reply(format!("done! {}", url.to_string_lossy()), msg)
+                .await;
         }
     } else {
         return Err("could not upload file (was >10mb)");
