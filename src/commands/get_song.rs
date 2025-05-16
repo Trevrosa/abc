@@ -48,7 +48,8 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     let download_path = Path::new(&idstring);
 
     if download_path.exists() {
-        return Err("u already downloading, pls wait");
+        ctx.edit_msg("u already downloading, pls wait", &mut greet).await; 
+        return Err("");
     }
 
     let _cleanup = DeleteWhenDone {
