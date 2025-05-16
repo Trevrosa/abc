@@ -1,12 +1,11 @@
-use std::{
-    io::{stdout, BufRead, BufReader},
-    path::Path,
-    process::{Command, Stdio},
-};
+use std::path::Path;
 
 use bytes::Bytes;
 use serenity::all::{ChannelType, Context, Message};
-use tokio::{fs::{remove_file, File}, io::AsyncReadExt};
+use tokio::{
+    fs::{remove_file, File},
+    io::AsyncReadExt,
+};
 use tracing::info;
 
 use crate::utils::context::Ext;
@@ -31,58 +30,22 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             remove_file("current_track").await.unwrap();
         }
 
-        let downloader = Command::new("/usr/bin/yt-dlp")
-            // ba* = choose best quality format with audio, which might be video
-            // see: https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
-            .args([args[1], "-o", "current_track", "-f", "ba*"])
-            .stdout(Stdio::piped())
-            .stderr(stdout())
-            .spawn();
+        ctx.yt_dlp(args[1], Some("current_track"), "ba*", &mut greet)
+            .await?;
 
-        if let Ok(mut downloader) = downloader {
-            {
-                let output = downloader.stdout.as_mut().unwrap();
-                let reader = BufReader::new(output);
-
-                for (i, chunk) in reader.lines().enumerate() {
-                    let new_msg = if i == 0 {
-                        format!("```{}```", chunk.unwrap().trim())
-                    } else {
-                        // should work since we put ``` already at the start of msg
-                        format!(
-                            "{}\n{}```",
-                            &greet.content.strip_suffix("```").unwrap(),
-                            chunk.unwrap().trim()
-                        )
-                    };
-
-                    ctx.edit_msg(new_msg, &mut greet).await;
-                }
-            }
-
-            if !downloader.wait().unwrap().success() {
-                return Err("download faild");
-            }
-
-            info!("downloaded {} with yt-dlp", args[1]);
-            let mut bytes: Vec<u8> = Vec::new();
-
-            if File::open("current_track")
-                .await
-                .unwrap()
-                .read_to_end(&mut bytes)
-                .await
-                .is_err()
-            {
-                ctx.edit_msg("faild to read file", &mut greet).await;
-                return Err("");
-            }
-
-            bytes.into()
-        } else {
-            ctx.edit_msg("faild to start download", &mut greet).await;
+        let mut bytes = Vec::new();
+        if File::open("current_track")
+            .await
+            .unwrap()
+            .read_to_end(&mut bytes)
+            .await
+            .is_err()
+        {
+            ctx.edit_msg("faild to read file", &mut greet).await;
             return Err("");
         }
+
+        bytes.into()
     } else if !msg.attachments.is_empty() {
         let global = ctx.data.try_read().unwrap();
         let client = global.get::<HttpClient>().unwrap();

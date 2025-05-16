@@ -24,7 +24,7 @@ pub async fn handle_cmd(cmd: &str, ctx: &Context, msg: &Message) -> Result<(), &
         "snipe" => commands::snipe(ctx, msg).await,
         "editsnipe" => commands::edit_snipe(ctx, msg).await,
 
-        "getsong" => commands::get_song(ctx, msg).await, 
+        "getsong" => commands::get_song(ctx, msg).await,
 
         // voice commands
         "play" => commands::voice::play(ctx, msg).await,

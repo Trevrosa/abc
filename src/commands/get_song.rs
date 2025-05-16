@@ -1,13 +1,8 @@
-use std::{
-    env,
-    io::{stdout, BufRead, BufReader},
-    path::Path,
-    process::{Command, Stdio},
-};
+use std::{env, path::Path};
 
 use serenity::all::{Context, CreateAttachment, CreateMessage, Message};
 use tokio::fs;
-use tracing::{error, info};
+use tracing::error;
 
 use crate::utils::context::Ext;
 
@@ -42,61 +37,17 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
 
     // we use yt-dlp output templates (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
     let output = idpath.join("%(title)s [%(id)s].%(ext)s");
-    let output = output.to_string_lossy();
 
-    // `ba` by default, `ba*`
+    // `ba*` by default, `ba` if the user wants it.
     let download_format = args
         .get(2)
         .iter()
-        .flat_map(|c| {
-            if c.starts_with("vid") {
-                Some("ba*")
-            } else {
-                None
-            }
-        })
+        .flat_map(|c| if c == &&"novid" { Some("ba") } else { None })
         .next()
-        .unwrap_or("ba");
+        .unwrap_or("ba*");
 
-    let downloader = Command::new("/usr/bin/yt-dlp")
-        // ba* = choose best quality format with audio, which might be video
-        // see: https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
-        .args([args[1], "-o", &output, "-f", download_format])
-        .stdout(Stdio::piped())
-        .stderr(stdout())
-        .spawn();
-
-    let Ok(mut downloader) = downloader else {
-        ctx.edit_msg("faild to start download", &mut greet).await;
-        return Err("");
-    };
-
-    // we want to drop reader after we finish
-    {
-        let output = downloader.stdout.as_mut().unwrap();
-        let reader = BufReader::new(output);
-
-        for (i, chunk) in reader.lines().enumerate() {
-            let new_msg = if i == 0 {
-                format!("```{}```", chunk.unwrap().trim())
-            } else {
-                // should work since we put ``` already at the start of msg
-                format!(
-                    "{}\n{}```",
-                    &greet.content.strip_suffix("```").unwrap(),
-                    chunk.unwrap().trim()
-                )
-            };
-
-            ctx.edit_msg(new_msg, &mut greet).await;
-        }
-    }
-
-    if !downloader.wait().unwrap().success() {
-        return Err("download faild");
-    }
-
-    info!("downloaded {url} with yt-dlp");
+    ctx.yt_dlp(url, Some(output), download_format, &mut greet)
+        .await?;
 
     let Ok(mut files) = idpath.read_dir() else {
         return Err("could not find download folder");
