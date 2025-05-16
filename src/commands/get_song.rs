@@ -11,7 +11,7 @@ const DISCORD_UPLOAD_LIMIT: u64 = 10 * 1000 * 1000;
 
 /// A guard struct that removes `self.path` after `self` is [`drop()`]ped.
 struct DeleteWhenDone<'a> {
-    path: &'a Path
+    path: &'a Path,
 }
 
 impl Drop for DeleteWhenDone<'_> {
@@ -43,15 +43,17 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     }
 
     let mut greet = ctx.reply("downloading ", msg).await;
-    
+
     let idstring = msg.author.id.get().to_string();
     let download_path = Path::new(&idstring);
-    
+
     if download_path.exists() {
         return Err("u already downloading, pls wait");
     }
 
-    let _cleanup = DeleteWhenDone { path: download_path };
+    let _cleanup = DeleteWhenDone {
+        path: download_path,
+    };
 
     if let Err(err) = fs::create_dir(download_path).await {
         error!("failed to create path {download_path:?}: {err:#?}");
@@ -92,8 +94,16 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     } else if let Some(shared_dir) = env::var_os("ABC_SHARED_DIR") {
         let shared_dir = Path::new(&shared_dir);
         if let Err(err) = fs::rename(file.path(), shared_dir.join(file.file_name())).await {
-            error!("error moving file to shared dir {shared_dir:?}: {err:#?}");
-            return Err("could not move file to shared dir");
+            if err.kind() != std::io::ErrorKind::CrossesDevices {
+                error!("error moving file to shared dir {shared_dir:?}: {err:#?}");
+                return Err("could not move file to shared dir");
+            }
+
+            info!("copying file {:?} over mount point", file.path());
+            if let Err(err) = fs::copy(file.path(), shared_dir.join(file.file_name())).await {
+                error!("error copying file to shared dir {shared_dir:?}: {err:#?}");
+                return Err("could not copy file to shared dir");
+            }
         }
 
         let external_host = include_str!("../../external_host").trim();
