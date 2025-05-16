@@ -80,6 +80,6 @@ impl Ext for Context {
         download_format: S,
         status_msg: &mut Message,
     ) -> impl Future<Output = Result<(), &'static str>> {
-        yt_dlp::download(&self, url, output, download_format, status_msg)
+        yt_dlp::download(self, url, output, download_format, status_msg)
     }
 }

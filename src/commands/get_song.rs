@@ -6,6 +6,9 @@ use tracing::error;
 
 use crate::utils::context::Ext;
 
+/// discord's free upload limit in bytes
+const DISCORD_UPLOAD_LIMIT: u64 = 10 * 1000 * 1000;
+
 pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
     if args.len() < 2 {
@@ -42,8 +45,7 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     let download_format = args
         .get(2)
         .iter()
-        .flat_map(|c| if c == &&"novid" { Some("ba") } else { None })
-        .next()
+        .find_map(|c| if c == &&"novid" { Some("ba") } else { None })
         .unwrap_or("ba*");
 
     ctx.yt_dlp(url, Some(output), download_format, &mut greet)
@@ -56,8 +58,10 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
         return Err("could not find download file");
     };
 
-    const DISCORD_LIMIT: u64 = 10 * 1000 * 1000;
-    if file.metadata().is_ok_and(|m| m.len() < DISCORD_LIMIT) {
+    if file
+        .metadata()
+        .is_ok_and(|m| m.len() < DISCORD_UPLOAD_LIMIT)
+    {
         // we can upload to discord
         let Ok(attachment) = CreateAttachment::path(file.path()).await else {
             return Err("failed to create attachment");

@@ -23,9 +23,9 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
     status_msg: &mut Message,
 ) -> Result<(), &'static str> {
     let url = url.as_ref();
-    let output = output
-        .map(|p| p.as_ref().to_owned())
-        .unwrap_or(PathBuf::from(DEFAULT_OUTPUT_TEMPLATE));
+    let output = output.map_or(PathBuf::from(DEFAULT_OUTPUT_TEMPLATE), |p| {
+        p.as_ref().to_owned()
+    });
     let download_format = download_format.as_ref();
 
     let downloader = Command::new("/usr/bin/yt-dlp")
