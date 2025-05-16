@@ -3,4 +3,5 @@
 /current_track*
 /cat_apikey
 /blacklisted
+/external_host
 .env
