@@ -7,9 +7,9 @@ use crate::HttpClient;
 
 #[allow(unused)]
 #[derive(Deserialize)]
-struct CatImage<'a> {
-    id: &'a str,
-    url: &'a str,
+struct CatImage {
+    id: String,
+    url: String,
     width: u32,
     height: u32,
 }
@@ -35,10 +35,8 @@ pub async fn cat(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         return Err("failed to send request");
     };
 
-    let resp = resp.text().await.unwrap();
-    let resp: Vec<CatImage> = serde_json::from_str(&resp).unwrap();
-
-    let new_msg = embed_message("car", resp[0].url);
+    let resp = resp.json::<Vec<CatImage>>().await.unwrap();
+    let new_msg = embed_message("car", &resp[0].url);
 
     ctx.reply(new_msg, msg).await;
 

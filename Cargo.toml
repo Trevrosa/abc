@@ -8,9 +8,8 @@ anyhow = "1.0.98"
 bincode = { version = "2.0.1", features = ["serde"] }
 bytes = "1.6.0"
 ctrlc = { version = "3.4.7", features = ["termination"] }
-reqwest = { version = "0.12.15", features = ["rustls-tls"], default-features = false }
+reqwest = { version = "0.12.15", features = ["json", "rustls-tls"], default-features = false }
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.117"
 serenity = { version = "0.12.4", features = ["client", "voice", "cache"] }
 songbird = { version = "0.5.0", features = ["driver", "receive"] }
 symphonia = { version = "0.5.4", features = ["all", "opt-simd"] }

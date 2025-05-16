@@ -12,7 +12,6 @@ dependencies = [
  "ctrlc",
  "reqwest 0.12.15",
  "serde",
- "serde_json",
  "serenity",
  "songbird",
  "symphonia",
