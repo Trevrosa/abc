@@ -4,7 +4,7 @@ use std::{
 
 use serenity::all::{Context, CreateAttachment, CreateMessage, Message};
 use tokio::fs;
-use tracing::info;
+use tracing::{error, info};
 
 use crate::utils::context::Ext;
 
@@ -26,12 +26,14 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     let idpath = Path::new(&idstring);
 
     if idpath.exists() {
-        if fs::remove_dir_all(idpath).await.is_err() {
+        if let Err(err) = fs::remove_dir_all(idpath).await {
+            error!("failed to clear path {idpath:?}: {err:#?}");
             return Err("failed to clear old download folder");
         }
     }
 
-    if fs::create_dir(idpath).await.is_err() {
+    if let Err(err) = fs::create_dir(idpath).await {
+        error!("failed to create path {idpath:?}: {err:#?}");
         return Err("could not create download folder");
     }
 
@@ -97,7 +99,8 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
         ctx.reply(message, msg).await;
     } else if let Some(shared_dir) = env::var_os("ABC_SHARED_DIR") {
         let shared_dir = Path::new(&shared_dir);
-        if fs::rename(file.path(), shared_dir.join(file.file_name())).await.is_err() {
+        if let Err(err) = fs::rename(file.path(), shared_dir.join(file.file_name())).await {
+            error!("error moving file to shared dir {shared_dir:?}: {err:#?}");
             return Err("could not move file to shared dir");
         }
         
@@ -113,7 +116,7 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     }
 
     if let Err(err) = fs::remove_dir_all(idpath).await {
-        tracing::error!("error removing dir {idpath:?}: {err:#?}");
+        error!("error removing dir {idpath:?}: {err:#?}");
     }
 
     Ok(())
