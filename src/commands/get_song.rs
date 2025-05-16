@@ -14,7 +14,7 @@ struct DeleteWhenDone<'a> {
     path: &'a Path
 }
 
-impl<'a> Drop for DeleteWhenDone<'a> {
+impl Drop for DeleteWhenDone<'_> {
     fn drop(&mut self) {
         let path = self.path.to_owned();
         tokio::task::spawn_blocking(move || {
