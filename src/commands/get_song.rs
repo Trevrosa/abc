@@ -2,12 +2,33 @@ use std::{env, path::Path};
 
 use serenity::all::{Context, CreateAttachment, CreateMessage, Message};
 use tokio::fs;
-use tracing::error;
+use tracing::{error, info};
 
 use crate::utils::context::Ext;
 
 /// discord's free upload limit in bytes
 const DISCORD_UPLOAD_LIMIT: u64 = 10 * 1000 * 1000;
+
+/// A guard struct that removes `self.path` after `self` is [`drop()`]ped.
+struct DeleteWhenDone<'a> {
+    path: &'a Path
+}
+
+impl<'a> Drop for DeleteWhenDone<'a> {
+    fn drop(&mut self) {
+        let path = self.path.to_owned();
+        tokio::task::spawn_blocking(move || {
+            if let Err(err) = std::fs::remove_dir_all(&path) {
+                // we don't care if `path` wasn't found.
+                if !matches!(err.kind(), std::io::ErrorKind::NotFound) {
+                    error!("failed to clean {path:?}: {err:#?}");
+                }
+            } else {
+                info!("cleaned path {path:?}");
+            }
+        });
+    }
+}
 
 pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
@@ -22,24 +43,23 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     }
 
     let mut greet = ctx.reply("downloading ", msg).await;
-
+    
     let idstring = msg.author.id.get().to_string();
-    let idpath = Path::new(&idstring);
-
-    if idpath.exists() {
-        if let Err(err) = fs::remove_dir_all(idpath).await {
-            error!("failed to clear path {idpath:?}: {err:#?}");
-            return Err("failed to clear old download folder");
-        }
+    let download_path = Path::new(&idstring);
+    
+    if download_path.exists() {
+        return Err("u already downloading, pls wait");
     }
 
-    if let Err(err) = fs::create_dir(idpath).await {
-        error!("failed to create path {idpath:?}: {err:#?}");
+    let _cleanup = DeleteWhenDone { path: download_path };
+
+    if let Err(err) = fs::create_dir(download_path).await {
+        error!("failed to create path {download_path:?}: {err:#?}");
         return Err("could not create download folder");
     }
 
     // we use yt-dlp output templates (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
-    let output = idpath.join("%(title)s [%(id)s].%(ext)s");
+    let output = download_path.join("%(title)s [%(id)s].%(ext)s");
 
     // `ba*` by default, `ba` if the user wants it.
     let download_format = args
@@ -51,7 +71,7 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     ctx.yt_dlp(url, Some(output), download_format, &mut greet)
         .await?;
 
-    let Ok(mut files) = idpath.read_dir() else {
+    let Ok(mut files) = download_path.read_dir() else {
         return Err("could not find download folder");
     };
     let Some(Ok(file)) = files.next() else {
@@ -87,10 +107,6 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
         }
     } else {
         return Err("could not upload file (was >10mb)");
-    }
-
-    if let Err(err) = fs::remove_dir_all(idpath).await {
-        error!("error removing dir {idpath:?}: {err:#?}");
     }
 
     Ok(())
