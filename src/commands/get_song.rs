@@ -20,7 +20,7 @@ impl<'a> Drop for DeleteWhenDone<'a> {
         tokio::task::spawn_blocking(move || {
             if let Err(err) = std::fs::remove_dir_all(&path) {
                 // we don't care if `path` wasn't found.
-                if !matches!(err.kind(), std::io::ErrorKind::NotFound) {
+                if err.kind() != std::io::ErrorKind::NotFound {
                     error!("failed to clean {path:?}: {err:#?}");
                 }
             } else {
