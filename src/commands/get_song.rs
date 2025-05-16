@@ -102,8 +102,9 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
                 .await;
         } else {
             let url = Path::new(external_host).join(file.file_name());
-            ctx.reply(format!("done! {}", url.to_string_lossy()), msg)
-                .await;
+            let url = url.to_string_lossy();
+            let url = urlencoding::encode(&url);
+            ctx.reply(format!("done! {url}"), msg).await;
         }
     } else {
         return Err("could not upload file (was >10mb)");
