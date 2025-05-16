@@ -48,7 +48,8 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     let download_path = Path::new(&idstring);
 
     if download_path.exists() {
-        ctx.edit_msg("u already downloading, pls wait", &mut greet).await; 
+        ctx.edit_msg("u already downloading, pls wait", &mut greet)
+            .await;
         return Err("");
     }
 
@@ -74,50 +75,53 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     ctx.yt_dlp(url, Some(output), download_format, &mut greet)
         .await?;
 
-    let Ok(mut files) = download_path.read_dir() else {
+    let Ok(files) = download_path.read_dir() else {
         return Err("could not find download folder");
     };
-    let Some(Ok(file)) = files.next() else {
-        return Err("could not find download file");
-    };
 
-    if file
-        .metadata()
-        .is_ok_and(|m| m.len() < DISCORD_UPLOAD_LIMIT)
-    {
-        // we can upload to discord
-        let Ok(attachment) = CreateAttachment::path(file.path()).await else {
-            return Err("failed to create attachment");
+    for file in files {
+        let Ok(file) = file else {
+            return Err("could not read downloaded file");
         };
 
-        let message = CreateMessage::new().content("done!").add_file(attachment);
-        ctx.reply(message, msg).await;
-    } else if let Some(shared_dir) = env::var_os("ABC_SHARED_DIR") {
-        let shared_dir = Path::new(&shared_dir);
-        if let Err(err) = fs::rename(file.path(), shared_dir.join(file.file_name())).await {
-            if err.kind() != std::io::ErrorKind::CrossesDevices {
-                error!("error moving file to shared dir {shared_dir:?}: {err:#?}");
-                return Err("could not move file to shared dir");
+        if file
+            .metadata()
+            .is_ok_and(|m| m.len() < DISCORD_UPLOAD_LIMIT)
+        {
+            // we can upload to discord
+            let Ok(attachment) = CreateAttachment::path(file.path()).await else {
+                return Err("failed to create attachment");
+            };
+
+            let message = CreateMessage::new().content("done!").add_file(attachment);
+            ctx.reply(message, msg).await;
+        } else if let Some(shared_dir) = env::var_os("ABC_SHARED_DIR") {
+            let shared_dir = Path::new(&shared_dir);
+            if let Err(err) = fs::rename(file.path(), shared_dir.join(file.file_name())).await {
+                if err.kind() != std::io::ErrorKind::CrossesDevices {
+                    error!("error moving file to shared dir {shared_dir:?}: {err:#?}");
+                    return Err("could not move file to shared dir");
+                }
+
+                info!("copying file {:?} over mount point", file.path());
+                if let Err(err) = fs::copy(file.path(), shared_dir.join(file.file_name())).await {
+                    error!("error copying file to shared dir {shared_dir:?}: {err:#?}");
+                    return Err("could not copy file to shared dir");
+                }
             }
 
-            info!("copying file {:?} over mount point", file.path());
-            if let Err(err) = fs::copy(file.path(), shared_dir.join(file.file_name())).await {
-                error!("error copying file to shared dir {shared_dir:?}: {err:#?}");
-                return Err("could not copy file to shared dir");
+            let external_host = include_str!("../../external_host").trim();
+            if external_host.is_empty() {
+                ctx.reply("uploaded to shared dir. (file was >10mb)", msg)
+                    .await;
+            } else {
+                let url = Path::new(external_host).join(file.file_name());
+                let url = url.to_string_lossy().replace(" ", "%20");
+                ctx.reply(format!("done! {url}"), msg).await;
             }
-        }
-
-        let external_host = include_str!("../../external_host").trim();
-        if external_host.is_empty() {
-            ctx.reply("uploaded to shared dir. (file was >10mb)", msg)
-                .await;
         } else {
-            let url = Path::new(external_host).join(file.file_name());
-            let url = url.to_string_lossy().replace(" ", "%20");
-            ctx.reply(format!("done! {url}"), msg).await;
+            return Err("could not upload file (was >10mb)");
         }
-    } else {
-        return Err("could not upload file (was >10mb)");
     }
 
     Ok(())
