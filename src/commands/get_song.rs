@@ -65,14 +65,18 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     // we use yt-dlp output templates (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
     let output = download_path.join("%(title)s [%(id)s].%(ext)s");
 
-    // `ba*` by default, `ba` if the user wants it.
-    let download_format = args
-        .get(2)
-        .iter()
-        .find_map(|c| if c == &&"novid" { Some("ba") } else { None })
-        .unwrap_or("ba*");
+    let no_video = args.get(2).is_some_and(|arg| arg == &"novid");
 
-    ctx.yt_dlp(url, Some(output), download_format, &mut greet)
+    // `ba*` by default, `ba` if the user wants it.
+    let download_format = if no_video { "ba" } else { "ba*" };
+    let audio_only_args: &[&str] = if no_video {
+        // ensure we get mp3 so it embeds on discord properly
+        &["--extract-audio", "--audio-format mp3"]
+    } else {
+        &[]
+    };
+
+    ctx.yt_dlp(url, Some(output), download_format, Some(audio_only_args), &mut greet)
         .await?;
 
     let Ok(files) = download_path.read_dir() else {

@@ -47,6 +47,7 @@ pub trait Ext {
         url: S,
         output: Option<P>,
         download_format: S,
+        extra_args: Option<&[&str]>,
         status_msg: &mut Message,
     ) -> impl Future<Output = Result<(), &'static str>>;
 }
@@ -78,8 +79,9 @@ impl Ext for Context {
         url: S,
         output: Option<P>,
         download_format: S,
+        extra_args: Option<&[&str]>,
         status_msg: &mut Message,
     ) -> impl Future<Output = Result<(), &'static str>> {
-        yt_dlp::download(self, url, output, download_format, status_msg)
+        yt_dlp::download(self, url, output, download_format, extra_args, status_msg)
     }
 }

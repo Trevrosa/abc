@@ -30,7 +30,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         }
 
         // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time 
-        ctx.yt_dlp(args[1], Some("current_track"), "ba*", &mut greet)
+        ctx.yt_dlp(args[1], Some("current_track"), "ba*", None, &mut greet)
             .await?;
 
         let mut bytes = Vec::new();
