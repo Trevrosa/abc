@@ -36,7 +36,7 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
         .args([url, "-o", &output.to_string_lossy(), "-f", download_format])
         .args(extra_args)
         .stdout(Stdio::piped())
-        .stderr(stdout())
+        .stderr(Stdio::piped())
         .spawn();
 
     let Ok(mut downloader) = downloader else {
