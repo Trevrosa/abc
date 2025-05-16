@@ -24,12 +24,12 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
 
     let mut greet = ctx.reply("downloading for u", msg).await;
 
-    // TODO: create one function so that get_song and this command can share it.
     let input: Bytes = if args.len() == 2 {
         if Path::new("current_track").exists() {
             remove_file("current_track").await.unwrap();
         }
 
+        // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time 
         ctx.yt_dlp(args[1], Some("current_track"), "ba*", &mut greet)
             .await?;
 
