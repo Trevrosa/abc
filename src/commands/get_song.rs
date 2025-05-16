@@ -66,10 +66,11 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     let output = download_path.join("%(title)s [%(id)s].%(ext)s");
 
     let no_video = args.get(2).is_some_and(|arg| arg == &"novid");
+    let mp3 = args.get(3).is_some_and(|arg| arg == &"mp3");
 
     // `ba*` by default, `ba` if the user wants it.
     let download_format = if no_video { "ba" } else { "ba*" };
-    let audio_only_args: &[&str] = if no_video {
+    let audio_only_args: &[&str] = if mp3 {
         // ensure we get mp3 so it embeds on discord properly
         &["--extract-audio", "--audio-format", "mp3"]
     } else {
