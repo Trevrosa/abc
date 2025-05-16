@@ -1,7 +1,7 @@
 /target
-/token
-/current_track*
-/cat_apikey
-/blacklisted
-/external_host
+token
+current_track*
+cat_apikey
+blacklisted
+external_host
 .env
