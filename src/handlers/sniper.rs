@@ -29,6 +29,10 @@ impl EventHandler for Sniper {
         if new.author.bot {
             return;
         }
+        // ignore self
+        if new.author.id == ctx.cache.current_user().id {
+            return;
+        }
 
         ctx.data
             .write()
@@ -56,6 +60,10 @@ impl EventHandler for Sniper {
 
         // ignore bots
         if msg.author.bot {
+            return;
+        }
+        // ignore self
+        if msg.author.id == ctx.cache.current_user().id {
             return;
         }
 
