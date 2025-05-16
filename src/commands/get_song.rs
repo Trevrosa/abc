@@ -71,7 +71,7 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     let download_format = if no_video { "ba" } else { "ba*" };
     let audio_only_args: &[&str] = if no_video {
         // ensure we get mp3 so it embeds on discord properly
-        &["--extract-audio", "--audio-format mp3"]
+        &["--extract-audio", "--audio-format", "mp3"]
     } else {
         &[]
     };
