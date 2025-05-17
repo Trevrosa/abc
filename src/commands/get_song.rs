@@ -86,32 +86,35 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     )
     .await?;
 
-    ctx.msg_new_line("finished download, checking size", &mut greet).await;
-    
+    ctx.msg_new_line("finished download, checking size", &mut greet)
+        .await;
+
     let Ok(files) = download_path.read_dir() else {
         return Err("could not find download folder");
     };
-    
+
     for file in files {
         let Ok(file) = file else {
             return Err("could not read downloaded file");
         };
-        
+
         if file
-        .metadata()
-        .is_ok_and(|m| m.len() < DISCORD_UPLOAD_LIMIT)
+            .metadata()
+            .is_ok_and(|m| m.len() < DISCORD_UPLOAD_LIMIT)
         {
-            ctx.msg_new_line("uploading as attachment", &mut greet).await;
+            ctx.msg_new_line("uploading as attachment", &mut greet)
+                .await;
 
             // we can upload to discord
             let Ok(attachment) = CreateAttachment::path(file.path()).await else {
                 return Err("failed to create attachment");
             };
-            
+
             let message = CreateMessage::new().content("done!").add_file(attachment);
             ctx.reply(message, msg).await;
         } else if let Some(shared_dir) = env::var_os("ABC_SHARED_DIR") {
-            ctx.msg_new_line("file >10mb, moving to shared dir", &mut greet).await;
+            ctx.msg_new_line("file >10mb, moving to shared dir", &mut greet)
+                .await;
 
             let shared_dir = Path::new(&shared_dir);
             if let Err(err) = fs::rename(file.path(), shared_dir.join(file.file_name())).await {
@@ -120,7 +123,8 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
                     return Err("could not move file to shared dir");
                 }
 
-                ctx.msg_new_line("need to copy over mount point, wait..", &mut greet).await;
+                ctx.msg_new_line("need to copy over mount point, wait..", &mut greet)
+                    .await;
                 info!("copying file {:?} over mount point", file.path());
                 if let Err(err) = fs::copy(file.path(), shared_dir.join(file.file_name())).await {
                     error!("error copying file to shared dir {shared_dir:?}: {err:#?}");
