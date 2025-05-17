@@ -1,4 +1,4 @@
-use serenity::all::{Context, Message};
+use serenity::all::{Context, Message, MessageBuilder};
 
 use crate::utils::{context::Ext, sniping::MostRecentEditedMessage};
 
@@ -6,7 +6,7 @@ use crate::utils::{context::Ext, sniping::MostRecentEditedMessage};
 pub async fn edit_snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
 
-    let Some(deleted_msg) = global
+    let Some(edited_msg) = global
         .get::<MostRecentEditedMessage>()
         .unwrap() // should be safe since init in main
         .get(&msg.guild_id.unwrap())
@@ -14,20 +14,20 @@ pub async fn edit_snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str
         return Err("no message to snipe");
     };
 
-    let snipe = if deleted_msg.timestamp.is_some() {
-        format!(
-            "{} edited their message `{}` to: `{}` (<t:{}:R>)", // discord relative timestamp
-            deleted_msg.author,
-            deleted_msg.old_message.replace('`', ""),
-            deleted_msg.new_message.replace('`', ""),
-            deleted_msg.timestamp.unwrap().unix_timestamp()
-        )
+    let timestamp = if let Some(timestamp) = edited_msg.timestamp {
+        format!(" (<t:{}:R>)", timestamp.unix_timestamp())
     } else {
-        format!(
-            "{} edited their message `{}` to: `{}`", // discord relative timestamp
-            deleted_msg.author, deleted_msg.old_message, deleted_msg.new_message,
-        )
+        " (unknown time)".to_string()
     };
+
+    let snipe = MessageBuilder::new()
+        .push(&edited_msg.author)
+        .push(" edited their message ")
+        .push_mono_safe(&edited_msg.old_message)
+        .push(" to: ")
+        .push_mono_safe(&edited_msg.new_message)
+        .push(timestamp)
+        .build();
 
     ctx.reply(snipe, msg).await;
 

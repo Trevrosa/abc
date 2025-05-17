@@ -1,4 +1,4 @@
-use serenity::all::{Context, Message};
+use serenity::all::{Context, Message, MessageBuilder};
 
 use crate::utils::{context::Ext, sniping::MostRecentDeletedMessage};
 
@@ -14,12 +14,12 @@ pub async fn snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         return Err("no message to snipe");
     };
 
-    let snipe = format!(
-        "{} deleted their message: `{}` (<t:{}:R>)", // discord relative timestamp
-        deleted_msg.author,
-        deleted_msg.content.replace('`', ""),
-        deleted_msg.timestamp.unix_timestamp()
-    );
+    let snipe = MessageBuilder::new()
+        .push(&deleted_msg.author)
+        .push(" deleted their message: ")
+        .push_mono_safe(&deleted_msg.content)
+        .push(format!(" (<t:{}:R>)", deleted_msg.timestamp.unix_timestamp()))
+        .build();
 
     ctx.reply(snipe, msg).await;
 
