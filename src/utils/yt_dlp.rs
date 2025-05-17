@@ -8,6 +8,7 @@ use tokio::{
     io::{AsyncBufReadExt, BufReader},
     process::Command,
 };
+use tokio_stream::{wrappers::LinesStream, StreamExt};
 use tracing::info;
 
 use crate::utils::context::Ext;
@@ -45,13 +46,16 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
 
     // we want to drop reader after we finish
     {
-        let output = downloader.stdout.take().unwrap();
-        let reader = BufReader::new(output);
+        let stdout = downloader.stdout.take().unwrap();
+        let stderr = downloader.stderr.take().unwrap();
+
+        let stdout = LinesStream::new(BufReader::new(stdout).lines());
+        let stderr = LinesStream::new(BufReader::new(stderr).lines());
 
         let mut i = 0;
-        let mut lines = reader.lines();
+        let mut lines = stdout.merge(stderr);
 
-        while let Ok(Some(line)) = lines.next_line().await {
+        while let Some(Ok(line)) = lines.next().await {
             let new_msg = if i == 0 {
                 format!("```{}```", line.trim())
             } else {
