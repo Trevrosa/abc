@@ -33,6 +33,10 @@ impl EventHandler for Sniper {
         if new.author.id == ctx.cache.current_user().id {
             return;
         }
+        // only log if content changes
+        if new.content == old.content {
+            return;
+        }
 
         ctx.data
             .write()
