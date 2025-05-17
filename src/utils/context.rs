@@ -34,6 +34,8 @@ pub trait Ext {
     ) -> impl Future<Output = Message> + Send;
     /// Edit message `msg` to new content `content`.
     fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()>;
+    /// Add a new line `line` to `msg`.
+    fn msg_new_line(&self, line: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()>;
     /// Find what channel user `user` is in, filtering by `kind`.
     fn find_user_channel<'a>(
         &self,
@@ -63,6 +65,10 @@ impl Ext for Context {
 
     fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()> {
         super::internal::edit(self, content.into(), msg)
+    }
+
+    fn msg_new_line(&self, line: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()> {
+        super::internal::edit(self, format!("{}\n{}", msg.content, line.into()), msg)
     }
 
     fn find_user_channel<'a>(
