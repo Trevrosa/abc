@@ -18,7 +18,10 @@ pub async fn snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         .push(&deleted_msg.author)
         .push(" deleted their message: ")
         .push_mono_safe(&deleted_msg.content)
-        .push(format!(" (<t:{}:R>)", deleted_msg.timestamp.unix_timestamp()))
+        .push(format!(
+            " (<t:{}:R>)",
+            deleted_msg.timestamp.unix_timestamp()
+        ))
         .build();
 
     ctx.reply(snipe, msg).await;
