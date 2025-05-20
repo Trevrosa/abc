@@ -34,7 +34,13 @@ impl TypeMapKey for Blacklisted {
     type Value = Vec<u64>;
 }
 
-// TODO: maybe use jemalloc and mimalloc
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+#[cfg(target_env = "msvc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 // discord id, so its ok to be unreadable
 #[allow(clippy::unreadable_literal)]
