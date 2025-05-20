@@ -63,7 +63,7 @@ pub async fn oauth(ctx: &Context, msg: &Message) -> anyhow::Result<AccessToken> 
 
     ctx
         .reply(
-            format!("go to <{verification_url}>\nand enter this code: `{user_code}` (u have {expires_in} secs)"),
+            format!("we need to authenticate with google.\ngo to <{verification_url}>\nand enter this code: `{user_code}` (u have {expires_in} secs)"),
             msg,
         )
         .await;
