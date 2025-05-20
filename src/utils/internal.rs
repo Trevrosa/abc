@@ -1,6 +1,7 @@
 use std::collections::hash_map::Iter;
 
 use serenity::all::{ChannelId, ChannelType, Context, EditMessage, GuildChannel, Message, User};
+use tracing::error;
 
 use super::context::CreateMessage;
 
@@ -13,6 +14,20 @@ pub(super) async fn reply(
 ) -> Message {
     let new_msg = content.into().0.reference_message(msg);
     msg.channel_id.send_message(&ctx, new_msg).await.unwrap()
+}
+
+/// # Panics
+/// will panic if message not sent
+pub(super) async fn error_reply(
+    ctx: &Context,
+    content: impl Into<String>,
+    msg: &Message,
+) -> Message {
+    let content = content.into();
+    error!("{content}");
+
+    let new_msg = serenity::all::CreateMessage::new().content(content);
+    reply(ctx, new_msg, msg).await
 }
 
 /// Will do nothing on error.

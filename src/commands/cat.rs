@@ -3,7 +3,7 @@ use serenity::all::{Context, Message};
 
 use crate::utils::context::Ext;
 use crate::utils::embed_message;
-use crate::HttpClient;
+use crate::CLIENT;
 
 #[allow(unused)]
 #[derive(Deserialize)]
@@ -15,15 +15,7 @@ struct CatImage {
 }
 
 pub async fn cat(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
-    let global = ctx.data.try_read().unwrap();
-
-    let Some(client) = global.get::<HttpClient>() else {
-        drop(global);
-
-        return Err("failed to get http client");
-    };
-
-    let Ok(request) = client
+    let Ok(request) = CLIENT
         .get("https://api.thecatapi.com/v1/images/search")
         .header("x-api-key", include_str!("../../cat_apikey"))
         .build()
@@ -31,7 +23,7 @@ pub async fn cat(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         return Err("failed to create request");
     };
 
-    let Ok(resp) = client.execute(request).await else {
+    let Ok(resp) = CLIENT.execute(request).await else {
         return Err("failed to send request");
     };
 

@@ -6,6 +6,8 @@ use tracing::{error, info};
 
 use crate::utils::context::Ext;
 
+use super::spotify::extract_spotify;
+
 /// discord's free upload limit in bytes
 const DISCORD_UPLOAD_LIMIT: u64 = 10 * 1000 * 1000;
 
@@ -41,6 +43,17 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     if !url.contains("http") && !url.contains(".com") {
         return Err("did not find url (did u forget `http`?)");
     }
+
+    let url = if url.contains("spotify.com") {
+        ctx.reply(
+            "this is a spotify url, we need to do some stuff first.",
+            msg,
+        )
+        .await;
+        extract_spotify(ctx, msg, url).await?
+    } else {
+        url.to_string()
+    };
 
     let mut greet = ctx.reply("downloading ", msg).await;
 
@@ -78,7 +91,7 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     };
 
     ctx.yt_dlp(
-        url,
+        url.as_str(),
         Some(output),
         download_format,
         audio_only_args,

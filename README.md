@@ -17,8 +17,11 @@ or be a module that re-exports other modules.
 - install [mold](https://github.com/rui314/mold)
 - create file `token` at project root and put your bot token in
 - create file `cat_apikey` at project root and put your [cat api key](https://thecatapi.com) in
-- for the command `getsong`, if you have a folder you want to put files larger than 10mb, set the `ABC_SHARED_DIR` environment variable to that folder.
-- for the command `getsong` if you have an external host url, create file `external_host` and put the base url in. if you don't, just `touch external_host`
+- for the command `getsong`:
+  - if you have a folder you want to put files larger than 10mb, set the `ABC_SHARED_DIR` environment variable to that folder.
+  - if you have an external host url, create file `external_host` and put the base url in. if you don't, just `touch external_host`
+  - get a [spotify api key](https://developer.spotify.com/dashboard), put your client_id and secret in files `spotify_clientid` and `spotify_secret` respectively.
+  - get a [youtube data api key](https://developers.google.com/youtube/registering_an_application), put your client_id and secret in files `yt_clientid` and `yt_secret` respectively.
 - install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and make sure the binary is available in `/usr/bin`
 - if on windows, building might not work.
 - `cargo build -r`

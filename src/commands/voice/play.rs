@@ -8,8 +8,8 @@ use tokio::{
 };
 use tracing::info;
 
-use crate::utils::context::Ext;
-use crate::{HttpClient, TrackHandleKey};
+use crate::TrackHandleKey;
+use crate::{utils::context::Ext, CLIENT};
 
 pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     let Some(manager) = songbird::get(ctx).await else {
@@ -48,14 +48,13 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         bytes.into()
     } else if !msg.attachments.is_empty() {
         let global = ctx.data.try_read().unwrap();
-        let client = global.get::<HttpClient>().unwrap();
 
-        let Ok(request) = client.get(&msg.attachments[0].url).build() else {
+        let Ok(request) = CLIENT.get(&msg.attachments[0].url).build() else {
             drop(global);
             return Err("faild to create request");
         };
 
-        let Ok(response) = client.execute(request).await else {
+        let Ok(response) = CLIENT.execute(request).await else {
             drop(global);
             return Err("faild to download");
         };

@@ -23,3 +23,8 @@ pub use blacklist::blacklist;
 
 mod get_song;
 pub use get_song::get_song;
+
+/// This one is not an actual command that can be run by a user normally.
+///
+/// This is used by another command, [`get_song`].
+mod spotify;

@@ -10,6 +10,7 @@ use crate::{utils::context::Ext, Blacklisted, SEVEN};
 #[derive(Debug)]
 pub struct Command;
 
+// TODO: use slash commands too
 #[inline]
 pub async fn handle_cmd(cmd: &str, ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     match cmd {
@@ -88,9 +89,11 @@ impl EventHandler for Command {
 
         let result: Result<(), &str> = handle_cmd(cmd, &ctx, &msg).await;
 
-        // if error == "", no response
         if let Err(error) = result {
-            ctx.reply(error, &msg).await;
+            // if error == "", no response
+            if !error.is_empty() {
+                ctx.reply(error, &msg).await;
+            }
         }
 
         typing.stop();

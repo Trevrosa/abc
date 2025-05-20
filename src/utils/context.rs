@@ -4,6 +4,7 @@ use serenity::all::{ChannelId, ChannelType, Context, GuildChannel, Message, User
 
 use super::yt_dlp;
 
+/// Don't use this. This is a wrapper around the original [`serenity::all::CreateMessage`] to allow additional trait impls.
 pub struct CreateMessage(pub serenity::all::CreateMessage);
 
 impl From<&str> for CreateMessage {
@@ -32,6 +33,11 @@ pub trait Ext {
         content: impl Into<CreateMessage> + Send,
         message: &Message,
     ) -> impl Future<Output = Message> + Send;
+    fn error_reply(
+        &self,
+        content: impl Into<String>,
+        message: &Message,
+    ) -> impl Future<Output = Message>;
     /// Edit message `msg` to new content `content`.
     fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()>;
     /// Add a new line `line` to `msg`.
@@ -61,6 +67,14 @@ impl Ext for Context {
         msg: &Message,
     ) -> impl Future<Output = Message> + Send {
         super::internal::reply(self, content, msg)
+    }
+
+    fn error_reply(
+        &self,
+        content: impl Into<String>,
+        msg: &Message,
+    ) -> impl Future<Output = Message> {
+        super::internal::error_reply(self, content, msg)
     }
 
     fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()> {

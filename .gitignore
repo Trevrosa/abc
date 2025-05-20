@@ -4,4 +4,9 @@ current_track*
 cat_apikey
 blacklisted
 external_host
+spotify_secret
+spotify_clientid
+yt_secret
+yt_clientid
+yt_token
 .env

@@ -6,11 +6,14 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.98"
 bincode = { version = "2.0.1", features = ["serde"] }
-bytes = "1.6.0"
+bytes = "1.10.1"
+chrono = { version = "0.4.41", features = ["serde"] }
 ctrlc = { version = "3.4.7", features = ["termination"] }
-reqwest = { version = "0.12.15", features = ["json", "rustls-tls"], default-features = false }
+regex = "1.11.1"
+reqwest = { version = "0.12.15", features = ["gzip", "json", "rustls-tls"], default-features = false }
 serde = { version = "1.0.219", features = ["derive"] }
-serenity = { version = "0.12.4", features = ["client", "voice", "cache"] }
+serde_json = "1.0.140"
+serenity = { version = "0.12.4", features = ["client", "voice", "cache", "collector"] }
 songbird = { version = "0.5.0", features = ["driver", "receive"] }
 symphonia = { version = "0.5.4", features = ["all", "opt-simd"] }
 thiserror = "2.0.12"
