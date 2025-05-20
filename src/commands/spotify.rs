@@ -149,8 +149,6 @@ pub(super) async fn extract_spotify(
         return Err("");
     }
 
-    ctx.reply("yt said yes!", msg).await;
-
     let results = match searched.json().await {
         Ok(res) => res,
         Err(err) => {
@@ -168,6 +166,9 @@ pub(super) async fn extract_spotify(
     if results.is_empty() {
         return Err("search results was empty");
     }
+
+    ctx.reply(format!("yt said yes! ({} results)", results.len()), msg)
+        .await;
 
     let as_emoji = |emoji: &str| emoji.parse::<ReactionType>().unwrap();
 
