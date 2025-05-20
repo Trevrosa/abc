@@ -1,4 +1,4 @@
-// mostly taken from https://github.com/yehuthi/serenity_ctrlc/, changed to work with serenity 0.12.1 and for my own purposes
+// mostly taken from https://github.com/yehuthi/serenity_ctrlc/, changed to work with serenity 0.12 and for my own purposes
 
 use std::{
     future::Future,
@@ -16,7 +16,9 @@ pub struct Disconnector {
 impl Disconnector {
     /// Creates a [`Disconnector`] [`Option`] from a [`Weak`] [`ShardManager`].
     ///
-    /// Returns [`None`] if the [`ShardManager`] has been already dropped.
+    /// Returns [`None`] if:
+    /// - the [`ShardManager`] has already been dropped, or
+    /// - the [`RwLock<TypeMap>`] has already been dropped.
     fn new(shard_manager: &Weak<ShardManager>, data: &Weak<RwLock<TypeMap>>) -> Option<Self> {
         Some(Self {
             shard_manager: shard_manager.upgrade()?,
