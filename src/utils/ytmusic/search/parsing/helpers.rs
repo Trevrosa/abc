@@ -14,7 +14,7 @@ use super::{
 
 use super::consts::{MENU_PLAYLIST_ID, TITLE_TEXT, WATCH_PID, WATCH_VIDEO_ID};
 
-// https://github.com/Trevrosa/abc/blob/main/parser/lib/python3.11/site-packages/ytmusicapi/parsers/search.py#L34
+// https://github.com/sigma67/ytmusicapi//blob/a979691bb03c1cb5e7e39985bbd4014187940d68/ytmusicapi/parsers/search.py#L34
 pub fn parse_top_result(data: &Value) -> Option<SearchResult> {
     let result_type = SearchResultType::try_from_str(data.pointer(SUBTITLE)?.as_str()?)?;
 
@@ -52,6 +52,7 @@ pub fn parse_top_result(data: &Value) -> Option<SearchResult> {
     Some(result)
 }
 
+// https://github.com/sigma67/ytmusicapi//blob/a979691bb03c1cb5e7e39985bbd4014187940d68/ytmusicapi/parsers/_utils.py#L39
 #[inline]
 fn get_item_text(item: &Value, index: usize, run_index: Option<usize>) -> Option<&Value> {
     item.get("flexColumns")?
@@ -62,6 +63,7 @@ fn get_item_text(item: &Value, index: usize, run_index: Option<usize>) -> Option
         .get("text")
 }
 
+// https://github.com/sigma67/ytmusicapi//blob/a979691bb03c1cb5e7e39985bbd4014187940d68/ytmusicapi/parsers/search.py#L74
 pub fn parse_search_results(results: &[Value]) -> Option<Vec<SearchResult>> {
     let mut search_results = Vec::new();
 
