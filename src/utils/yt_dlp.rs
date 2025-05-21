@@ -28,19 +28,22 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
         p.as_ref().to_owned()
     });
     let download_format = download_format.as_ref();
+
+    let args = [
+        url,
+        "--downloader",
+        "ffmpeg",
+        "-o",
+        &output.to_string_lossy(),
+        "-f",
+        download_format,
+    ];
     let extra_args = extra_args.unwrap_or(&[]);
 
     let downloader = Command::new("/usr/bin/yt-dlp")
         // ba* = choose best quality format with audio, which might be video
         // see: https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
-        .args([
-            url,
-            "--verbose",
-            "-o",
-            &output.to_string_lossy(),
-            "-f",
-            download_format,
-        ])
+        .args(args)
         .args(extra_args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
