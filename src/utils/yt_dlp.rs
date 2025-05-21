@@ -33,7 +33,14 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
     let downloader = Command::new("/usr/bin/yt-dlp")
         // ba* = choose best quality format with audio, which might be video
         // see: https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection
-        .args([url, "-o", &output.to_string_lossy(), "-f", download_format])
+        .args([
+            url,
+            "--verbose",
+            "-o",
+            &output.to_string_lossy(),
+            "-f",
+            download_format,
+        ])
         .args(extra_args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
