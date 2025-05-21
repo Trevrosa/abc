@@ -39,7 +39,7 @@ pub fn parse_results(resp: &Value) -> Option<Vec<SearchResult>> {
             trace!("parsing top result");
             search_results.push(parse_top_result(music_card_shelf)?);
 
-            let Some(Some(shelf_contents)) = music_card_shelf.get("contents").map(|v| v.as_array())
+            let Some(shelf_contents) = music_card_shelf.get("contents").and_then(|v| v.as_array())
             else {
                 trace!("d");
                 continue;
