@@ -29,12 +29,12 @@ pub fn parse_top_result(data: &Value) -> Option<SearchResult> {
             }
         }
         Album => {
-            title = data.pointer(TITLE_TEXT)?.as_str()?.to_string();
+            title = data.pointer(TITLE_TEXT)?.try_to_string()?;
             let button_command = data.pointer("/buttons/0/buttonRenderer/command")?;
             playlist_id = button_command.pointer(WATCH_PID)?.try_to_string();
         }
         Playlist => {
-            title = data.pointer(TITLE_TEXT)?.as_str()?.to_string();
+            title = data.pointer(TITLE_TEXT)?.try_to_string()?;
             playlist_id = data.pointer(MENU_PLAYLIST_ID)?.try_to_string();
         }
         Episode | Profile | Artist | Podcast | Station => {
@@ -101,12 +101,12 @@ pub fn parse_search_results(results: &[Value]) -> Option<Vec<SearchResult>> {
         let title = if result_type == Artist {
             String::new()
         } else {
-            get_item_text(data, 0, None)?.as_str()?.to_string()
+            get_item_text(data, 0, None)?.try_to_string()?
         };
 
         let playlist_id = if result_type == Album {
             let play_nav = data.pointer(PLAY_BUTTON)?.get("playNavigationEndpoint")?;
-            Some(play_nav.pointer(WATCH_PID)?.as_str()?.to_string())
+            Some(play_nav.pointer(WATCH_PID)?.try_to_string()?)
         } else {
             None
         };
@@ -115,8 +115,7 @@ pub fn parse_search_results(results: &[Value]) -> Option<Vec<SearchResult>> {
             Some(
                 data.pointer(PLAY_BUTTON)?
                     .pointer("/playNavigationEndpoint/watchEndpoint/videoId")?
-                    .as_str()?
-                    .to_string(),
+                    .try_to_string()?,
             )
         } else {
             None
