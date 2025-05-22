@@ -4,9 +4,7 @@ use serenity::all::{Context, CreateAttachment, CreateMessage, Message};
 use tokio::fs;
 use tracing::{error, info};
 
-use crate::utils::context::Ext;
-
-use super::spotify::extract_spotify;
+use crate::utils::{context::Ext, spotify::extract_spotify};
 
 /// discord's free upload limit in bytes
 const DISCORD_UPLOAD_LIMIT: u64 = 10 * 1000 * 1000;

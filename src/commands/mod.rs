@@ -3,7 +3,7 @@ pub mod voice;
 mod join;
 pub use join::join;
 
-mod test;
+pub mod test;
 pub use test::test;
 
 mod leave;
@@ -23,8 +23,3 @@ pub use blacklist::blacklist;
 
 mod get_song;
 pub use get_song::get_song;
-
-/// This one is not an actual command that can be run by a user normally.
-///
-/// This is used by another command, [`get_song`].
-mod spotify;
