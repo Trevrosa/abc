@@ -2,9 +2,9 @@ use serenity::all::{CreateEmbed, CreateMessage};
 
 mod internal;
 
-pub mod status;
 pub mod context;
 pub mod sniping;
+pub mod status;
 
 pub mod spotify;
 pub mod ytmusic;

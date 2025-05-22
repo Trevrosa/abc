@@ -42,6 +42,7 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
         return Err("");
     };
 
+    #[allow(clippy::if_same_then_else)]
     let filter = |line: &str| {
         if line.starts_with("Input") {
             true
@@ -52,11 +53,7 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
             true
         } else if line.trim_start().starts_with("n =") {
             true
-        } else if line.trim_start().starts_with("Please report") {
-            true
-        } else {
-            false
-        }
+        } else { line.trim_start().starts_with("Please report") }
     };
 
     do_status(ctx, status_msg, &mut downloader, Some(filter)).await;
