@@ -1,5 +1,7 @@
 pub mod parsing;
 
+use std::time::Instant;
+
 use anyhow::anyhow;
 use chrono::{Datelike, Utc};
 use regex::Regex;
@@ -82,6 +84,8 @@ async fn get_base() -> anyhow::Result<Response> {
 ///
 /// <https://github.com/sigma67/ytmusicapi//blob/a979691bb03c1cb5e7e39985bbd4014187940d68/ytmusicapi/helpers.py#L42>
 fn parse_visitor_id(resp: &str) -> anyhow::Result<String> {
+    let start = Instant::now();
+
     // original: r"ytcfg\.set\s*\(\s*({.+?})\s*\)\s*;"
     // use (?s) to match across lines
     let re = Regex::new(r"ytcfg\.set\s*\(\s*(\{.+?\})\s*\)\s*;").unwrap();
@@ -100,7 +104,7 @@ fn parse_visitor_id(resp: &str) -> anyhow::Result<String> {
         return Err(anyhow!("failed to find VISITOR_DATA from cfg"));
     };
 
-    info!("found visitor id!");
+    info!("found visitor id! (took {:?})", start.elapsed());
     Ok(visitor_id
         .as_str()
         .ok_or(anyhow!("VISITOR_DATA not str"))?

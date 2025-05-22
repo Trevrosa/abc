@@ -2,10 +2,12 @@ mod consts;
 mod ext;
 mod helpers;
 
+use std::time::Instant;
+
 use consts::SECTION_LIST;
 use helpers::{parse_search_results, parse_top_result};
 use serde_json::Value;
-use tracing::trace;
+use tracing::{info, trace};
 
 // just the ones I want.
 #[derive(Debug)]
@@ -19,6 +21,8 @@ pub struct SearchResult {
 ///
 /// <https://github.com/sigma67/ytmusicapi//blob/a979691bb03c1cb5e7e39985bbd4014187940d68/ytmusicapi/mixins/search.py#L190>
 pub fn parse_results(resp: &Value) -> Option<Vec<SearchResult>> {
+    let start = Instant::now();
+
     let results = resp
         .pointer("/contents/tabbedSearchResultsRenderer/tabs/0/tabRenderer/content")
         .unwrap_or_else(|| resp.get("contents").expect("no contents"));
@@ -60,6 +64,12 @@ pub fn parse_results(resp: &Value) -> Option<Vec<SearchResult>> {
     }
 
     trace!("there are some results!");
+
+    info!(
+        "took {:?} to parse {} results",
+        start.elapsed(),
+        search_results.len()
+    );
 
     Some(search_results)
 }
