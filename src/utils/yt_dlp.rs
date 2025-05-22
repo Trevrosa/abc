@@ -4,14 +4,10 @@ use std::{
 };
 
 use serenity::all::{Context, Message};
-use tokio::{
-    io::{AsyncBufReadExt, BufReader},
-    process::Command,
-};
-use tokio_stream::{wrappers::LinesStream, StreamExt};
-use tracing::info;
+use tokio::process::Command;
+use tracing::{info, warn};
 
-use crate::utils::context::Ext;
+use crate::utils::{context::Ext, status::do_status};
 
 const DEFAULT_OUTPUT_TEMPLATE: &str = "%(title)s [%(id)s].%(ext)s";
 
@@ -29,15 +25,7 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
     });
     let download_format = download_format.as_ref();
 
-    let args = [
-        url,
-        "--downloader",
-        "ffmpeg",
-        "-o",
-        &output.to_string_lossy(),
-        "-f",
-        download_format,
-    ];
+    let args = [url, "-o", &output.to_string_lossy(), "-f", download_format];
     let extra_args = extra_args.unwrap_or(&[]);
 
     let downloader = Command::new("/usr/bin/yt-dlp")
@@ -54,33 +42,24 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
         return Err("");
     };
 
-    // we want to drop reader after we finish
-    {
-        let stdout = downloader.stdout.take().unwrap();
-        let stderr = downloader.stderr.take().unwrap();
-
-        let stdout = LinesStream::new(BufReader::new(stdout).lines());
-        let stderr = LinesStream::new(BufReader::new(stderr).lines());
-
-        let mut i = 0;
-        let mut lines = stdout.merge(stderr);
-
-        while let Some(Ok(line)) = lines.next().await {
-            let new_msg = if i == 0 {
-                format!("```{}```", line.trim())
-            } else {
-                // should work since we put ``` already at the start of msg
-                format!(
-                    "{}\n{}```",
-                    &status_msg.content.strip_suffix("```").unwrap(),
-                    line.trim()
-                )
-            };
-
-            ctx.edit_msg(new_msg, status_msg).await;
-            i += 1;
+    let filter = |line: &str| {
+        if line.starts_with("Input") {
+            true
+        } else if line.starts_with("[hls") {
+            true
+        } else if line.starts_with("WARNING") {
+            warn!("{line}");
+            true
+        } else if line.trim_start().starts_with("n =") {
+            true
+        } else if line.trim_start().starts_with("Please report") {
+            true
+        } else {
+            false
         }
-    }
+    };
+
+    do_status(ctx, status_msg, &mut downloader, Some(filter)).await;
 
     if !downloader.wait().await.unwrap().success() {
         return Err("download faild");
