@@ -5,7 +5,7 @@ use serenity::all::{
     GuildId, Interaction, Ready,
 };
 use serenity::async_trait;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use crate::commands::voice::{pause, play, resume, seek, set_loop, status, stop};
 use crate::commands::{blacklist, cat, edit_snipe, get_song, join, leave, snipe, test};
@@ -28,7 +28,7 @@ impl EventHandler for SlashCommands {
             return;
         };
 
-        println!("got slash cmd `{}`", command.data.name);
+        info!("received slash cmd `{}`", command.data.name);
 
         // we have to tell discord we are in the progress of responding
         let initial_resp =
@@ -65,8 +65,6 @@ impl EventHandler for SlashCommands {
     }
 
     async fn ready(&self, ctx: Context, _: Ready) {
-        let testing_guild = GuildId::new(TESTING_GUILD);
-
         let commands = vec![
             test::register(),
             play::register(),
@@ -85,23 +83,32 @@ impl EventHandler for SlashCommands {
             pause::register(),
         ];
 
-        testing_guild
-            .set_commands(&ctx.http, commands.clone())
-            .await
-            .expect("failed to register guild cmds");
+        let testing_guild = GuildId::new(TESTING_GUILD);
+        if cfg!(debug_assertions) {
+            testing_guild
+                .set_commands(&ctx.http, commands)
+                .await
+                .expect("failed to register guild cmds");
 
-        info!("finished setting testing slash cmds");
-
-        info!("now registering global cmds, might take a while.");
-        let register_start = Instant::now();
-        for command in commands {
-            if let Err(err) = Command::create_global_command(&ctx.http, command).await {
-                error!("failed to set global command: {err:?}");
+            info!("finished setting testing slash cmds");
+        } else {
+            if let Err(err) = testing_guild.set_commands(&ctx.http, vec![]).await {
+                warn!("couldn't reset testing slash cmds: {err:?}");
+            } else {
+                info!("reset testing slash cmds");
             }
+
+            info!("registering global cmds, might take a while.");
+            let register_start = Instant::now();
+            for command in commands {
+                if let Err(err) = Command::create_global_command(&ctx.http, command).await {
+                    error!("failed to set global command: {err:?}");
+                }
+            }
+            info!(
+                "finished registering global slash cmds (took {:?})",
+                register_start.elapsed()
+            );
         }
-        info!(
-            "finished registering global slash cmds (took {:?})",
-            register_start.elapsed()
-        );
     }
 }
