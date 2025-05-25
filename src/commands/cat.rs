@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serde::Deserialize;
 use serenity::all::{Context, CreateCommand};
 
@@ -19,6 +21,7 @@ pub async fn cat(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static st
     let Ok(request) = CLIENT
         .get("https://api.thecatapi.com/v1/images/search")
         .header("x-api-key", include_str!("../../cat_apikey"))
+        .timeout(Duration::from_secs(5))
         .build()
     else {
         return Err("failed to create request");
