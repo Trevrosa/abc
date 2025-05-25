@@ -37,13 +37,17 @@ impl EventHandler for Sniper {
         if new.content == old.content {
             return;
         }
+        // ignore non-guilds
+        let Some(guild) = new.guild_id else {
+            return;
+        };
 
         ctx.data
             .write()
             .await
             .get_mut::<MostRecentEditedMessage>()
             .unwrap()
-            .insert(new.guild_id.unwrap(), EditedMessage::new(old, new));
+            .insert(guild, EditedMessage::new(old, new));
 
         info!("new edited message stored");
     }
@@ -70,7 +74,7 @@ impl EventHandler for Sniper {
         if msg.author.id == ctx.cache.current_user().id {
             return;
         }
-
+        // ignore non-guilds
         let Some(guild) = guild else {
             return;
         };

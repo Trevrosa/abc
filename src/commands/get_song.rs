@@ -1,10 +1,17 @@
 use std::{env, path::Path};
 
-use serenity::all::{Context, CreateAttachment, CreateMessage, Message};
+use serenity::all::{
+    CommandOptionType, Context, CreateAttachment, CreateCommand, CreateCommandOption,
+};
 use tokio::fs;
 use tracing::{error, info};
 
-use crate::utils::{context::Ext, spotify::extract_spotify};
+use crate::utils::{
+    context::CtxExt,
+    reply::{CreateReply, Replyer},
+    spotify::extract_spotify,
+    ArgValue, Args, Get, Is,
+};
 
 /// discord's free upload limit in bytes
 const DISCORD_UPLOAD_LIMIT: u64 = 10 * 1000 * 1000;
@@ -30,13 +37,19 @@ impl Drop for DeleteWhenDone<'_> {
     }
 }
 
-pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
-    let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
-    if args.len() < 2 {
+pub async fn get_song(
+    ctx: &Context,
+    replyer: &Replyer<'_>,
+    args: Args<'_>,
+) -> Result<(), &'static str> {
+    if args.is_empty() {
         return Err("expected at least 1 argument");
     }
 
-    let url = args[1];
+    let Some(ArgValue::String(url)) = args.first_value() else {
+        return Err("no string url in args");
+    };
+
     // naive check
     if !url.contains("http") && !url.contains(".com") {
         return Err("did not find url (did u forget `http`?)");
@@ -45,17 +58,20 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     let url = if url.contains("spotify.com") {
         ctx.reply(
             "this is a spotify url, we need to do some stuff first.",
-            msg,
+            replyer,
         )
         .await;
-        extract_spotify(ctx, msg, url).await?
+        extract_spotify(ctx, replyer, url.as_str()).await?
     } else {
         url.to_string()
     };
 
-    let mut greet = ctx.reply("downloading ", msg).await;
+    let mut greet = ctx.reply("downloading ", replyer).await;
 
-    let idstring = msg.author.id.get().to_string();
+    let idstring = match replyer {
+        Replyer::Prefix(msg) => msg.author.id.get().to_string(),
+        Replyer::Slash(int) => int.user.id.get().to_string(),
+    };
     let download_path = Path::new(&idstring);
 
     if download_path.exists() {
@@ -76,8 +92,10 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     // we use yt-dlp output templates (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
     let output = download_path.join("%(title)s [%(id)s].%(ext)s");
 
-    let no_video = args.get(2).is_some_and(|arg| arg == &"novid");
-    let mp3 = args.get(3).is_some_and(|arg| arg == &"mp3");
+    let no_video =
+        args.get("novid").is_some_and(|a| a.is(true)) || args.get(1).is_some_and(|a| a.is("novid"));
+    let mp3 =
+        args.get("mp3").is_some_and(|a| a.is(true)) || args.get(2).is_some_and(|a| a.is("mp3"));
 
     // `ba*` by default, `ba` if the user wants it.
     let download_format = if no_video { "ba" } else { "ba*" };
@@ -121,8 +139,8 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
                 return Err("failed to create attachment");
             };
 
-            let message = CreateMessage::new().content("done!").add_file(attachment);
-            ctx.reply(message, msg).await;
+            let message = CreateReply::new().content("done!").add_file(attachment);
+            ctx.reply(message, replyer).await;
         } else if let Some(shared_dir) = env::var_os("ABC_SHARED_DIR") {
             ctx.msg_new_line("file >10mb, moving to shared dir", &mut greet)
                 .await;
@@ -145,12 +163,12 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
 
             let external_host = include_str!("../../external_host").trim();
             if external_host.is_empty() {
-                ctx.reply("uploaded to shared dir. (file was >10mb)", msg)
+                ctx.reply("uploaded to shared dir. (file was >10mb)", replyer)
                     .await;
             } else {
                 let url = Path::new(external_host).join(file.file_name());
                 let url = url.to_string_lossy().replace(' ', "%20");
-                ctx.reply(format!("done! {url}"), msg).await;
+                ctx.reply(format!("done! {url}"), replyer).await;
             }
         } else {
             return Err("could not upload file (was >10mb)");
@@ -158,4 +176,23 @@ pub async fn get_song(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
     }
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("getsong")
+        .description("get a song from its url, supporting spotify")
+        .add_option(
+            CreateCommandOption::new(CommandOptionType::String, "songurl", "song's url")
+                .required(true),
+        )
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::Boolean,
+            "novideo",
+            "only download audio",
+        ))
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::Boolean,
+            "mp3",
+            "convert to mp3, might take a while",
+        ))
 }

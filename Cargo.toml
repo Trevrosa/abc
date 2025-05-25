@@ -17,7 +17,7 @@ serenity = { version = "0.12.4", features = ["client", "voice", "cache", "collec
 songbird = { version = "0.5.0", features = ["driver", "receive"] }
 symphonia = { version = "0.5.4", features = ["all", "opt-simd"] }
 thiserror = "2.0.12"
-tokio = { version = "1.45.0", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.45.1", features = ["rt-multi-thread", "macros"] }
 tokio-stream = { version = "0.1.17", features = ["io-util"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"

@@ -10,15 +10,17 @@ use std::time::Duration;
 use serenity::{
     all::{
         Context, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage,
-        CreateMessage, Message, ReactionType,
+        ReactionType,
     },
     futures::StreamExt,
 };
 use tracing::{info, warn};
 
-use crate::utils::context::Ext;
+use crate::utils::context::CtxExt;
 use crate::CLIENT;
 
+use super::reply::CreateReply;
+use super::reply::Replyer;
 use super::ytmusic::{self, search::parsing::SearchResult};
 
 async fn spotify_request_token_and_save(
@@ -46,7 +48,7 @@ async fn spotify_request_token_and_save(
 /// Return the user's choice.
 pub async fn extract_spotify(
     ctx: &Context,
-    msg: &Message,
+    replyer: &Replyer<'_>,
     spotify_url: &str,
 ) -> Result<String, &'static str> {
     let Ok(mut data) = ctx.data.try_write() else {
@@ -68,7 +70,7 @@ pub async fn extract_spotify(
         token
     };
 
-    ctx.reply("got spotify token", msg).await;
+    ctx.reply("got spotify token", replyer).await;
 
     let Ok(spotify_track) = find_track_from_url(spotify_url, token).await else {
         return Err("failed to find metadata");
@@ -82,7 +84,7 @@ pub async fn extract_spotify(
 
     ctx.reply(
         format!("extracted metadata ```rs\n{spotify_track:#?}```"),
-        msg,
+        replyer,
     )
     .await;
 
@@ -92,28 +94,28 @@ pub async fn extract_spotify(
     let access_token: ytmusic::AccessToken = match stored {
         Some(token) => {
             if token.expired() {
-                ctx.reply("cached token found, but expired. refreshing it..", msg)
+                ctx.reply("cached token found, but expired. refreshing it..", replyer)
                     .await;
                 info!("cached yt token expired, refreshing it");
                 let mut token = token.clone();
                 if let Err(err) = token.refresh().await {
                     let log = format!("failed to refresh: {err:#?}");
-                    ctx.error_reply(log, msg).await;
+                    ctx.error_reply(log, replyer).await;
                     return Err("");
                 }
                 data.insert::<ytmusic::AccessToken>(Some(token.clone()));
                 token
             } else {
-                ctx.reply("using valid cached token", msg).await;
+                ctx.reply("using valid cached token", replyer).await;
                 info!("cached yt token not expired, using it");
                 token.clone()
             }
         }
         None => {
-            let auth = ytmusic::oauth(ctx, msg).await;
+            let auth = ytmusic::oauth(ctx, replyer).await;
             let Ok(token) = auth else {
                 let log = format!("failed to auth: {:#?}", auth.unwrap_err());
-                ctx.error_reply(log, msg).await;
+                ctx.error_reply(log, replyer).await;
                 return Err("");
             };
             data.insert::<ytmusic::AccessToken>(Some(token.clone()));
@@ -127,7 +129,7 @@ pub async fn extract_spotify(
             access_token.granted.timestamp(),
             access_token.expires_at().timestamp()
         ),
-        msg,
+        replyer,
     )
     .await;
 
@@ -135,7 +137,7 @@ pub async fn extract_spotify(
     let searched = ytmusic::search(query.as_str(), access_token.as_ref()).await;
     let Ok(searched) = searched else {
         let err = format!("```rs\n{:#?}```", searched.unwrap_err());
-        ctx.reply(err, msg).await;
+        ctx.reply(err, replyer).await;
         return Err("");
     };
 
@@ -146,7 +148,7 @@ pub async fn extract_spotify(
             searched.status(),
             searched.text().await
         );
-        ctx.reply(err, msg).await;
+        ctx.reply(err, replyer).await;
         return Err("");
     }
 
@@ -154,7 +156,7 @@ pub async fn extract_spotify(
         Ok(res) => res,
         Err(err) => {
             let err = format!("failed to deserialize json: {err}");
-            ctx.error_reply(err, msg).await;
+            ctx.error_reply(err, replyer).await;
             return Err("");
         }
     };
@@ -168,7 +170,7 @@ pub async fn extract_spotify(
         return Err("search results was empty");
     }
 
-    ctx.reply(format!("yt said yes! ({} results)", results.len()), msg)
+    ctx.reply(format!("yt said yes! ({} results)", results.len()), replyer)
         .await;
 
     let as_emoji = |emoji: &str| emoji.parse::<ReactionType>().unwrap();
@@ -176,6 +178,7 @@ pub async fn extract_spotify(
     let left_button = CreateButton::new("left_button").emoji(as_emoji("⬅️"));
     let right_button = CreateButton::new("right_button").emoji(as_emoji("➡️"));
     let ok_button = CreateButton::new("ok_button").emoji(as_emoji("✅"));
+    let cancel_button = CreateButton::new("cancel").emoji(as_emoji("❌"));
 
     let get_url = |result: &SearchResult| {
         if let Some(id) = &result.video_id {
@@ -202,13 +205,14 @@ pub async fn extract_spotify(
     let mut current_page: usize = 0;
 
     // show the first result by default
-    let paginated = CreateMessage::new()
+    let paginated = CreateReply::new()
         .content(fmt_result(current_page).to_string())
         .button(left_button)
         .button(right_button)
-        .button(ok_button);
+        .button(ok_button)
+        .button(cancel_button);
 
-    let paginated = ctx.reply(paginated, msg).await;
+    let paginated = ctx.reply(paginated, replyer).await;
 
     let mut interactions = paginated
         .await_component_interaction(&ctx.shard)
@@ -253,8 +257,11 @@ pub async fn extract_spotify(
                     .unwrap();
                 break;
             }
+            "cancel" => {
+                return Err("ok, cancelled");
+            }
             id => {
-                warn!("got unknown interaction custom_id {id}");
+                warn!("received unexpected interaction custom_id {id}");
             }
         }
     }
@@ -267,7 +274,7 @@ pub async fn extract_spotify(
         return Err("ur choice had no url ?");
     };
 
-    ctx.reply(format!("chose <{url}>!"), msg).await;
+    ctx.reply(format!("chose <{url}>!"), replyer).await;
 
     Ok(url)
 }

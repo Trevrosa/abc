@@ -2,11 +2,14 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
-use serenity::all::{Context, Message};
+use serenity::all::Context;
 use tokio::time::sleep;
 use tracing::info;
 
-use crate::{utils::context::Ext, CLIENT};
+use crate::{
+    utils::{context::CtxExt, reply::Replyer},
+    CLIENT,
+};
 
 use super::access_token::AccessToken;
 
@@ -33,7 +36,7 @@ pub(super) struct AccessTokenResponse {
 ///
 /// - `context` is the bot's [`Context`]
 /// - `msg` is the user's message requesting this oauth.
-pub async fn oauth(ctx: &Context, msg: &Message) -> anyhow::Result<AccessToken> {
+pub async fn oauth(ctx: &Context, replyer: &Replyer<'_>) -> anyhow::Result<AccessToken> {
     let auth_resp = CLIENT
         .post("https://oauth2.googleapis.com/device/code")
         .form(&[
@@ -64,7 +67,7 @@ pub async fn oauth(ctx: &Context, msg: &Message) -> anyhow::Result<AccessToken> 
     ctx
         .reply(
             format!("we need to authenticate with google.\ngo to <{verification_url}>\nand enter this code: `{user_code}` (u have {expires_in} secs)"),
-            msg,
+            replyer,
         )
         .await;
 

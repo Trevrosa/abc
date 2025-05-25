@@ -5,7 +5,7 @@ use tokio::{
 };
 use tokio_stream::{wrappers::LinesStream, StreamExt};
 
-use super::context::Ext;
+use super::context::CtxExt;
 
 /// Constantly update message `status_msg` with the output of the passed [`Child`] with optional filtering.
 ///

@@ -1,17 +1,24 @@
 use std::time::Duration;
 
-use serenity::all::{Context, Message};
+use serenity::all::{
+    CommandOptionType, Context, CreateCommand, CreateCommandOption, InteractionContext,
+};
 
-use crate::utils::context::Ext;
+use crate::utils::context::CtxExt;
+use crate::utils::reply::Replyer;
+use crate::utils::{ArgValue, Args};
 use crate::TrackHandleKey;
 
-pub async fn seek(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
-    let args: Vec<&str> = msg.content.trim().split(' ').collect();
-    if args.len() != 2 {
+pub async fn seek(
+    ctx: &Context,
+    replyer: &Replyer<'_>,
+    args: Args<'_>,
+) -> Result<(), &'static str> {
+    if args.len() != 1 {
         return Err("u dont say wat i seek to");
     }
 
-    let Ok(to_seek) = args[1].parse() else {
+    let Some(ArgValue::Integer(to_seek)) = args.first_value() else {
         return Err("not number");
     };
 
@@ -22,17 +29,29 @@ pub async fn seek(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             return Err("song ended..");
         };
 
-        let seek = track.seek_async(Duration::from_secs(to_seek)).await;
+        #[allow(clippy::cast_sign_loss)]
+        let seek = track.seek_async(Duration::from_secs(*to_seek as u64)).await;
         drop(global);
 
         if seek.is_ok() {
-            ctx.reply(format!("seekd to {to_seek} secs"), msg).await;
+            ctx.reply(format!("seekd to {to_seek} secs"), replyer).await;
         } else {
-            ctx.reply("faild to seek", msg).await;
+            ctx.reply("faild to seek", replyer).await;
         }
     } else {
-        ctx.reply("im not play anything", msg).await;
+        ctx.reply("im not play anything", replyer).await;
     }
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("seek")
+        .add_context(InteractionContext::Guild)
+        .description("seek the current song to the given amount of seconds")
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::Integer,
+            "seektime",
+            "the amount of seconds to seek the current song to",
+        ))
 }

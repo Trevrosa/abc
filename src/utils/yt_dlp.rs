@@ -7,7 +7,7 @@ use serenity::all::{Context, Message};
 use tokio::process::Command;
 use tracing::{info, warn};
 
-use crate::utils::{context::Ext, status::do_status};
+use crate::utils::{context::CtxExt, status::do_status};
 
 const DEFAULT_OUTPUT_TEMPLATE: &str = "%(title)s [%(id)s].%(ext)s";
 
@@ -53,7 +53,9 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
             true
         } else if line.trim_start().starts_with("n =") {
             true
-        } else { line.trim_start().starts_with("Please report") }
+        } else {
+            line.trim_start().starts_with("Please report")
+        }
     };
 
     do_status(ctx, status_msg, &mut downloader, Some(filter)).await;

@@ -1,10 +1,11 @@
-use serenity::all::{Context, Message};
+use serenity::all::{Context, CreateCommand, InteractionContext};
 use songbird::tracks::LoopState;
 
-use crate::utils::context::Ext;
+use crate::utils::context::CtxExt;
+use crate::utils::reply::Replyer;
 use crate::TrackHandleKey;
 
-pub async fn set_loop(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
+pub async fn set_loop(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
 
     if global.contains_key::<TrackHandleKey>() {
@@ -20,16 +21,22 @@ pub async fn set_loop(ctx: &Context, msg: &Message) -> Result<(), &'static str> 
             track.disable_loop().unwrap();
             drop(global);
 
-            ctx.reply("stopd looping", msg).await;
+            ctx.reply("stopd looping", replyer).await;
         } else {
             track.enable_loop().unwrap();
             drop(global);
 
-            ctx.reply("looping", msg).await;
+            ctx.reply("looping", replyer).await;
         }
     } else {
         return Err("im not play anything");
     }
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("loop")
+        .add_context(InteractionContext::Guild)
+        .description("toggle whether the current song should be looped")
 }

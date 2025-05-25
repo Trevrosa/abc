@@ -132,8 +132,9 @@ async fn main() -> Result<()> {
 
     let mut client: Client = Client::builder(token, intents)
         .event_handler(handlers::Client)
-        .event_handler(handlers::Command)
+        .event_handler(handlers::PrefixCommands)
         .event_handler(handlers::Sniper)
+        .event_handler(handlers::SlashCommands)
         .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
         .type_map_insert::<MostRecentEditedMessage>(HashMap::new())
         .type_map_insert::<Blacklisted>(blacklisted)

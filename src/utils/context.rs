@@ -1,47 +1,22 @@
-use std::{collections::hash_map::Iter, future::Future, path::Path};
+use std::{collections::hash_map::Iter, path::Path};
 
 use serenity::all::{ChannelId, ChannelType, Context, GuildChannel, Message, User};
 
-use super::yt_dlp;
-
-/// Don't use this. This is a wrapper around the original [`serenity::all::CreateMessage`] to allow additional trait impls.
-pub struct CreateMessage(pub serenity::all::CreateMessage);
-
-impl From<&str> for CreateMessage {
-    fn from(value: &str) -> Self {
-        Self(serenity::all::CreateMessage::new().content(value))
-    }
-}
-
-impl From<String> for CreateMessage {
-    fn from(value: String) -> Self {
-        Self(serenity::all::CreateMessage::new().content(value))
-    }
-}
-
-impl From<serenity::all::CreateMessage> for CreateMessage {
-    fn from(value: serenity::all::CreateMessage) -> Self {
-        Self(value)
-    }
-}
+use super::{
+    reply::{CreateReply, Replyer},
+    yt_dlp,
+};
 
 /// Only impl for Context
-pub trait Ext {
-    /// Reply to message `message` with message `content`.
-    fn reply(
-        &self,
-        content: impl Into<CreateMessage> + Send,
-        message: &Message,
-    ) -> impl Future<Output = Message> + Send;
-    fn error_reply(
-        &self,
-        content: impl Into<String>,
-        message: &Message,
-    ) -> impl Future<Output = Message>;
+pub trait CtxExt {
+    /// Reply to the `replyer` with message `reply`.
+    async fn reply(&self, reply: impl Into<CreateReply>, replyer: &Replyer) -> Message;
+    /// Reply t
+    async fn error_reply(&self, content: impl Into<String>, message: &Replyer) -> Message;
     /// Edit message `msg` to new content `content`.
-    fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()>;
+    async fn edit_msg(&self, content: impl Into<String>, msg: &mut Message);
     /// Add a new line `line` to `msg`.
-    fn msg_new_line(&self, line: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()>;
+    async fn msg_new_line(&self, line: impl Into<String>, msg: &mut Message);
     /// Find what channel user `user` is in, filtering by `kind`.
     fn find_user_channel<'a>(
         &self,
@@ -50,39 +25,31 @@ pub trait Ext {
         channels: &'a mut Iter<ChannelId, GuildChannel>,
     ) -> Option<&'a GuildChannel>;
     /// Download url `url` with `yt-dlp`, allowing output and download format selection, editing message `status_msg` with its status.
-    fn yt_dlp<P: AsRef<Path>, S: AsRef<str>>(
+    async fn yt_dlp<P: AsRef<Path>, S: AsRef<str>>(
         &self,
         url: S,
         output: Option<P>,
         download_format: S,
         extra_args: Option<&[&str]>,
         status_msg: &mut Message,
-    ) -> impl Future<Output = Result<(), &'static str>>;
+    ) -> Result<(), &'static str>;
 }
 
-impl Ext for Context {
-    fn reply(
-        &self,
-        content: impl Into<CreateMessage> + Send,
-        msg: &Message,
-    ) -> impl Future<Output = Message> + Send {
-        super::internal::reply(self, content, msg)
+impl CtxExt for Context {
+    async fn reply(&self, reply: impl Into<CreateReply>, replyer: &Replyer<'_>) -> Message {
+        super::internal::reply(self, reply, replyer).await
     }
 
-    fn error_reply(
-        &self,
-        content: impl Into<String>,
-        msg: &Message,
-    ) -> impl Future<Output = Message> {
-        super::internal::error_reply(self, content, msg)
+    async fn error_reply(&self, content: impl Into<String>, msg: &Replyer<'_>) -> Message {
+        super::internal::error_reply(self, content, msg).await
     }
 
-    fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()> {
-        super::internal::edit(self, content.into(), msg)
+    async fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) {
+        super::internal::edit(self, content.into(), msg).await;
     }
 
-    fn msg_new_line(&self, line: impl Into<String>, msg: &mut Message) -> impl Future<Output = ()> {
-        super::internal::edit(self, format!("{}\n{}", msg.content, line.into()), msg)
+    async fn msg_new_line(&self, line: impl Into<String>, msg: &mut Message) {
+        super::internal::edit(self, format!("{}\n{}", msg.content, line.into()), msg).await;
     }
 
     fn find_user_channel<'a>(
@@ -91,17 +58,17 @@ impl Ext for Context {
         kind: ChannelType,
         channels: &'a mut Iter<ChannelId, GuildChannel>,
     ) -> Option<&'a GuildChannel> {
-        super::internal::find_user_channel(self, user, kind, channels)
+        super::internal::find_user_channel(&self.cache, user, kind, channels)
     }
 
-    fn yt_dlp<P: AsRef<Path>, S: AsRef<str>>(
+    async fn yt_dlp<P: AsRef<Path>, S: AsRef<str>>(
         &self,
         url: S,
         output: Option<P>,
         download_format: S,
         extra_args: Option<&[&str]>,
         status_msg: &mut Message,
-    ) -> impl Future<Output = Result<(), &'static str>> {
-        yt_dlp::download(self, url, output, download_format, extra_args, status_msg)
+    ) -> Result<(), &'static str> {
+        yt_dlp::download(self, url, output, download_format, extra_args, status_msg).await
     }
 }

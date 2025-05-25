@@ -1,5 +1,6 @@
 mod command;
-pub use command::Command;
+pub use command::prefix::PrefixCommands;
+pub use command::slash::SlashCommands;
 
 mod sniper;
 pub use sniper::Sniper;

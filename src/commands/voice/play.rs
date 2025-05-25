@@ -1,36 +1,53 @@
 use std::path::Path;
 
 use bytes::Bytes;
-use serenity::all::{ChannelType, Context, Message};
+use serenity::all::{
+    ChannelType, CommandOptionType, Context, CreateCommand, CreateCommandOption, InteractionContext,
+};
 use tokio::{
     fs::{remove_file, File},
     io::AsyncReadExt,
 };
-use tracing::info;
+use tracing::{info, warn};
 
-use crate::TrackHandleKey;
-use crate::{utils::context::Ext, CLIENT};
+use crate::{utils::reply::Replyer, TrackHandleKey};
+use crate::{
+    utils::{context::CtxExt, ArgValue, Args},
+    CLIENT,
+};
 
-pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
+pub async fn play(
+    ctx: &Context,
+    replyer: &Replyer<'_>,
+    args: Args<'_>,
+) -> Result<(), &'static str> {
     let Some(manager) = songbird::get(ctx).await else {
         return Err("voice client not init");
     };
 
-    let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
+    let guild = match replyer {
+        Replyer::Prefix(msg) => msg.guild_id,
+        Replyer::Slash(int) => int.guild_id,
+    };
 
-    let Some(guild) = msg.guild_id else {
+    let Some(guild) = guild else {
         return Err("faild to get guild");
     };
 
-    let mut greet = ctx.reply("downloading for u", msg).await;
+    let mut greet = ctx.reply("downloading for u", replyer).await;
 
-    let input: Bytes = if args.len() == 2 {
+    if args.is_empty() {
+        ctx.edit_msg("u dont say wat i play", &mut greet).await;
+        return Err("");
+    }
+
+    let input: Bytes = if let Some(ArgValue::String(url)) = args.first_value() {
         if Path::new("current_track").exists() {
             remove_file("current_track").await.unwrap();
         }
 
         // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time
-        ctx.yt_dlp(args[1], Some("current_track"), "ba*", None, &mut greet)
+        ctx.yt_dlp(url.as_str(), Some("current_track"), "ba*", None, &mut greet)
             .await?;
 
         let mut bytes = Vec::new();
@@ -46,10 +63,10 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         }
 
         bytes.into()
-    } else if !msg.attachments.is_empty() {
+    } else if let Some(ArgValue::Attachment(attachment)) = args.first_value() {
         let global = ctx.data.try_read().unwrap();
 
-        let Ok(request) = CLIENT.get(&msg.attachments[0].url).build() else {
+        let Ok(request) = CLIENT.get(&attachment.url).build() else {
             drop(global);
             return Err("faild to create request");
         };
@@ -59,7 +76,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             return Err("faild to download");
         };
 
-        info!("downloaded {} with reqwest", &msg.attachments[0].url);
+        info!("downloaded {} with reqwest", &attachment.url);
 
         let Ok(bytes) = response.bytes().await else {
             ctx.edit_msg("faild to decode file", &mut greet).await;
@@ -69,6 +86,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
 
         bytes
     } else {
+        warn!("unexpected args {args:?}");
         ctx.edit_msg("u dont say wat i play", &mut greet).await;
         return Err("");
     };
@@ -79,11 +97,14 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     };
 
     let mut channels = channels.iter();
+    let user = match replyer {
+        Replyer::Prefix(msg) => &msg.author,
+        Replyer::Slash(int) => &int.user,
+    };
 
     // join vc if bot has never joined a vc
     if manager.get(guild).is_none() {
-        let Some(channel) = ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels)
-        else {
+        let Some(channel) = ctx.find_user_channel(user, ChannelType::Voice, &mut channels) else {
             ctx.edit_msg("u arent in a vc", &mut greet).await;
             return Err("");
         };
@@ -99,8 +120,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
 
         // join vc if bot is not currently in a vc
         if handler.current_connection().is_none() {
-            let Some(channel) =
-                ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels)
+            let Some(channel) = ctx.find_user_channel(user, ChannelType::Voice, &mut channels)
             else {
                 ctx.edit_msg("u arent in a vc", &mut greet).await;
                 return Err("");
@@ -122,4 +142,20 @@ pub async fn play(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     }
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("play")
+        .description("play a song")
+        .add_context(InteractionContext::Guild)
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::Attachment,
+            "songfile",
+            "the song to play",
+        ))
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::String,
+            "songurl",
+            "the url of the song to play",
+        ))
 }

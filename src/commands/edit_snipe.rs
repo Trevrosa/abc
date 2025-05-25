@@ -1,15 +1,24 @@
-use serenity::all::{Context, Message, MessageBuilder};
+use serenity::all::{Context, CreateCommand, InteractionContext, MessageBuilder};
 
-use crate::utils::{context::Ext, sniping::MostRecentEditedMessage};
+use crate::utils::{context::CtxExt, reply::Replyer, sniping::MostRecentEditedMessage};
 
 #[allow(clippy::significant_drop_tightening)]
-pub async fn edit_snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
+pub async fn edit_snipe(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
+
+    let guild_id = match replyer {
+        Replyer::Prefix(msg) => msg.guild_id,
+        Replyer::Slash(int) => int.guild_id,
+    };
+
+    let Some(guild_id) = guild_id else {
+        return Err("faild to get guild");
+    };
 
     let Some(edited_msg) = global
         .get::<MostRecentEditedMessage>()
         .unwrap() // should be safe since init in main
-        .get(&msg.guild_id.unwrap())
+        .get(&guild_id)
     else {
         return Err("no message to snipe");
     };
@@ -29,7 +38,13 @@ pub async fn edit_snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str
         .push(timestamp)
         .build();
 
-    ctx.reply(snipe, msg).await;
+    ctx.reply(snipe, replyer).await;
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("editsnipe")
+        .add_context(InteractionContext::Guild)
+        .description("snipe an edited message")
 }

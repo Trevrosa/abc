@@ -1,15 +1,23 @@
-use serenity::all::{Context, Message, MessageBuilder};
+use serenity::all::{Context, CreateCommand, InteractionContext, MessageBuilder};
 
-use crate::utils::{context::Ext, sniping::MostRecentDeletedMessage};
+use crate::utils::{context::CtxExt, reply::Replyer, sniping::MostRecentDeletedMessage};
 
-#[allow(clippy::significant_drop_tightening)]
-pub async fn snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
+pub async fn snipe(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
+
+    let guild_id = match replyer {
+        Replyer::Prefix(msg) => msg.guild_id,
+        Replyer::Slash(int) => int.guild_id,
+    };
+
+    let Some(guild_id) = guild_id else {
+        return Err("faild to get guild");
+    };
 
     let Some(deleted_msg) = global
         .get::<MostRecentDeletedMessage>()
         .unwrap() // should be safe since init in main
-        .get(&msg.guild_id.unwrap())
+        .get(&guild_id)
     else {
         return Err("no message to snipe");
     };
@@ -24,7 +32,13 @@ pub async fn snipe(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         ))
         .build();
 
-    ctx.reply(snipe, msg).await;
+    ctx.reply(snipe, replyer).await;
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("snipe")
+        .add_context(InteractionContext::Guild)
+        .description("snipe a deleted message")
 }

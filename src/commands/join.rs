@@ -1,9 +1,20 @@
-use serenity::all::{ChannelId, ChannelType, Context, Message};
+use serenity::all::{
+    ChannelType, CommandOptionType, Context, CreateCommand, CreateCommandOption, InteractionContext,
+};
 
-use crate::utils::context::Ext;
+use crate::utils::{context::CtxExt, reply::Replyer, ArgValue, Args};
 
-pub async fn join(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
-    let Some(guild) = msg.guild_id else {
+pub async fn join(
+    ctx: &Context,
+    replyer: &Replyer<'_>,
+    args: Args<'_>,
+) -> Result<(), &'static str> {
+    let guild_id = match replyer {
+        Replyer::Prefix(msg) => msg.guild_id,
+        Replyer::Slash(int) => int.guild_id,
+    };
+
+    let Some(guild) = guild_id else {
         return Err("faild to get guild");
     };
 
@@ -13,22 +24,8 @@ pub async fn join(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
 
     let mut channels = channels.iter();
 
-    let args = msg.content.trim().split(' ').collect::<Vec<&str>>();
-
-    let channel = if args.len() == 2 {
-        let id: Result<u64, std::num::ParseIntError> = if args[1].starts_with("<#") {
-            args[1][2..args[1].len() - 1].parse::<u64>()
-        } else if args[1].starts_with("https://discord.com/channels/") {
-            args[1].split('/').collect::<Vec<&str>>()[5].parse::<u64>()
-        } else {
-            args[1].parse::<u64>()
-        };
-
-        let Ok(id) = id else {
-            return Err("not a vc");
-        };
-
-        let Ok(channel) = ctx.http.get_channel(ChannelId::new(id)).await else {
+    let channel = if let Some(ArgValue::Channel(channel)) = args.first().map(|a| &a.value) {
+        let Ok(channel) = ctx.http.get_channel(channel.id).await else {
             return Err("channel not exist");
         };
 
@@ -40,7 +37,12 @@ pub async fn join(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
             None
         }
     } else {
-        ctx.find_user_channel(&msg.author, ChannelType::Voice, &mut channels)
+        let user = match replyer {
+            Replyer::Prefix(msg) => &msg.author,
+            Replyer::Slash(int) => &int.user,
+        };
+
+        ctx.find_user_channel(user, ChannelType::Voice, &mut channels)
             .cloned()
     };
 
@@ -49,18 +51,25 @@ pub async fn join(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
     };
 
     if let Some(manager) = songbird::get(ctx).await.clone() {
-        let Some(guild) = msg.guild_id else {
-            return Err("faild to get guild");
-        };
-
         if manager.join(guild, channel.id).await.is_ok() {
-            ctx.reply("joined u", msg).await;
+            ctx.reply("joined u", replyer).await;
         } else {
-            ctx.reply("faild to join", msg).await;
+            ctx.reply("faild to join", replyer).await;
         }
     } else {
         return Err("voice manager failed");
     }
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("join")
+        .add_context(InteractionContext::Guild)
+        .description("join the specified channel or the one you're currently in")
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::Channel,
+            "channel",
+            "the channel the bot should join",
+        ))
 }

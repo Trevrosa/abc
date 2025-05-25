@@ -1,9 +1,10 @@
-use serenity::all::{Context, Message};
+use serenity::all::{Context, CreateCommand, InteractionContext};
 
-use crate::utils::context::Ext;
+use crate::utils::context::CtxExt;
+use crate::utils::reply::Replyer;
 use crate::TrackHandleKey;
 
-pub async fn resume(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
+pub async fn resume(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
     let global = ctx.data.try_read().unwrap();
 
     if global.contains_key::<TrackHandleKey>() {
@@ -14,10 +15,16 @@ pub async fn resume(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
         track.play().unwrap();
         drop(global);
 
-        ctx.reply("resumd", msg).await;
+        ctx.reply("resumd", replyer).await;
     } else {
         return Err("im not play anything");
     }
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("resume")
+        .add_context(InteractionContext::Guild)
+        .description("resume bot playback")
 }

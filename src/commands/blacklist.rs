@@ -1,51 +1,40 @@
-use serenity::all::{Context, Guild, Message, UserId};
+use serenity::all::{CommandOptionType, Context, CreateCommand, CreateCommandOption};
 
-use crate::{utils::context::Ext, Blacklisted, OWNER};
+use crate::{
+    utils::{context::CtxExt, reply::Replyer, ArgValue, Args},
+    Blacklisted, OWNER,
+};
 
-pub async fn blacklist(ctx: &Context, msg: &Message) -> Result<(), &'static str> {
-    if msg.author.id != OWNER {
+pub async fn blacklist(
+    ctx: &Context,
+    replyer: &Replyer<'_>,
+    args: Args<'_>,
+) -> Result<(), &'static str> {
+    let author_id = match replyer {
+        Replyer::Prefix(msg) => msg.author.id,
+        Replyer::Slash(int) => int.user.id,
+    };
+
+    if author_id != OWNER {
         return Err("u canot");
     }
 
     let mut global = ctx.data.write().await;
     let blacklisted = global.get_mut::<Blacklisted>().unwrap();
 
-    let args: Vec<&str> = msg.content.split("`black ").collect();
-
-    if args.len() == 2 {
-        let guild: Guild = msg.guild(&ctx.cache).unwrap().clone();
-        let members = guild.members;
-
-        let user: u64 = if let Ok(user) = args[1].parse::<u64>() {
-            if !members.contains_key(&UserId::new(user)) {
-                return Err("that not real");
-            }
-
-            user
-        } else if args[1].starts_with("<@") {
-            let Ok(user) = args[1][2..args[1].len() - 1].parse::<u64>() else {
-                return Err("that not real");
-            };
-
-            if !members.contains_key(&UserId::new(user)) {
-                return Err("that not real");
-            }
-
-            user
-        } else {
-            return Err("that not real");
-        };
+    if let Some(ArgValue::User(user, _)) = args.first_value() {
+        let user = user.id.get();
 
         if let Some(seven) = blacklisted.iter().position(|x| x == &user) {
             blacklisted.remove(seven);
             drop(global);
 
-            ctx.reply("unblackd", msg).await;
+            ctx.reply("unblackd", replyer).await;
         } else {
             blacklisted.push(user);
             drop(global);
 
-            ctx.reply("blackd", msg).await;
+            ctx.reply("blackd", replyer).await;
         }
     } else {
         let blacklisted: Vec<(&u64, String)> = blacklisted
@@ -55,8 +44,18 @@ pub async fn blacklist(ctx: &Context, msg: &Message) -> Result<(), &'static str>
         let blacklisted = format!("```rust\n{blacklisted:#?}\n```");
         drop(global);
 
-        ctx.reply(blacklisted, msg).await;
+        ctx.reply(blacklisted, replyer).await;
     }
 
     Ok(())
+}
+
+pub fn register() -> CreateCommand {
+    CreateCommand::new("black")
+        .description("blacklist someone from using bot commands")
+        .add_option(CreateCommandOption::new(
+            CommandOptionType::User,
+            "user",
+            "the user to blacklist",
+        ))
 }

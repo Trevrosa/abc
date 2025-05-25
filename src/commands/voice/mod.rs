@@ -1,20 +1,20 @@
-mod play;
+pub mod play;
 pub use play::play;
 
-mod resume;
+pub mod resume;
 pub use resume::resume;
 
-mod pause;
+pub mod pause;
 pub use pause::pause;
 
-mod set_loop;
+pub mod set_loop;
 pub use set_loop::set_loop;
 
-mod status;
+pub mod status;
 pub use status::status;
 
-mod stop;
+pub mod stop;
 pub use stop::stop;
 
-mod seek;
+pub mod seek;
 pub use seek::seek;

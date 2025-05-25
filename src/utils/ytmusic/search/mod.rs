@@ -8,7 +8,7 @@ use regex::Regex;
 use reqwest::{header::HeaderMap, Response};
 use serde_json::{json, Value};
 use tokio::sync::OnceCell;
-use tracing::info;
+use tracing::{info, trace};
 
 use crate::CLIENT;
 
@@ -67,7 +67,7 @@ async fn get_base() -> anyhow::Result<Response> {
         .send()
         .await?;
 
-    info!("sending normal req to ytm");
+    trace!("sending normal req to ytm");
 
     if !resp.status().is_success() {
         return Err(anyhow!(
@@ -90,14 +90,14 @@ fn parse_visitor_id(resp: &str) -> anyhow::Result<String> {
     // use (?s) to match across lines
     let re = Regex::new(r"ytcfg\.set\s*\(\s*(\{.+?\})\s*\)\s*;").unwrap();
 
-    info!("finding ytcfg blob");
+    trace!("finding ytcfg blob");
     let cfg_blob = re
         .captures(resp)
         .and_then(|cap| cap.get(1))
         .map(|m| m.as_str())
         .ok_or(anyhow!("failed to find cfg blob"))?;
 
-    info!("parsing it as json");
+    trace!("parsing it as json");
     let cfg: Value = serde_json::from_str(cfg_blob)?;
 
     let Some(visitor_id) = cfg.get("VISITOR_DATA") else {

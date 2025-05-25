@@ -1,19 +1,31 @@
 use std::collections::hash_map::Iter;
 
-use serenity::all::{ChannelId, ChannelType, Context, EditMessage, GuildChannel, Message, User};
+use serenity::all::{
+    Cache, ChannelId, ChannelType, Context, EditMessage, GuildChannel, Message, User,
+};
 use tracing::error;
 
-use super::context::CreateMessage;
+use super::reply::{CreateReply, IntExt, Replyer};
 
 /// # Panics
-/// will panic if message not sent
+///
+/// Will panic if message failed to send
 pub(super) async fn reply(
     ctx: &Context,
-    content: impl Into<CreateMessage> + Send,
-    msg: &Message,
+    reply: impl Into<CreateReply>,
+    replyer: &Replyer<'_>,
 ) -> Message {
-    let new_msg = content.into().0.reference_message(msg);
-    msg.channel_id.send_message(&ctx, new_msg).await.unwrap()
+    match replyer {
+        Replyer::Prefix(reference) => {
+            let new_msg = reply.into().into_msg(reference);
+            reference
+                .channel_id
+                .send_message(&ctx, new_msg)
+                .await
+                .unwrap()
+        }
+        Replyer::Slash(int) => int.reply(ctx, reply).await.unwrap(),
+    }
 }
 
 /// # Panics
@@ -21,13 +33,12 @@ pub(super) async fn reply(
 pub(super) async fn error_reply(
     ctx: &Context,
     content: impl Into<String>,
-    msg: &Message,
+    replyer: &Replyer<'_>,
 ) -> Message {
     let content = content.into();
     error!("{content}");
 
-    let new_msg = serenity::all::CreateMessage::new().content(content);
-    reply(ctx, new_msg, msg).await
+    reply(ctx, content, replyer).await
 }
 
 /// Will do nothing on error.
@@ -40,7 +51,7 @@ pub(super) fn edit_message(content: String) -> EditMessage {
 }
 
 pub(super) fn find_user_channel<'a>(
-    ctx: &Context,
+    cache: &Cache,
     user: &User,
     kind: ChannelType,
     channels: &'a mut Iter<ChannelId, GuildChannel>,
@@ -52,7 +63,7 @@ pub(super) fn find_user_channel<'a>(
             return None;
         }
 
-        let Ok(members) = c.members(&ctx.cache) else {
+        let Ok(members) = c.members(cache) else {
             return None;
         };
 
