@@ -60,6 +60,8 @@ pub async fn play(
             url
         };
 
+        let mut greet = ctx.reply("", replyer).await;
+
         // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time
         ctx.yt_dlp(url.as_str(), Some("current_track"), "ba*", None, &mut greet)
             .await?;
