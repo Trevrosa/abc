@@ -49,9 +49,12 @@ pub fn register() -> CreateCommand {
     CreateCommand::new("seek")
         .add_context(InteractionContext::Guild)
         .description("seek the current song to the given amount of seconds")
-        .add_option(CreateCommandOption::new(
-            CommandOptionType::Integer,
-            "seektime",
-            "the amount of seconds to seek the current song to",
-        ))
+        .add_option(
+            CreateCommandOption::new(
+                CommandOptionType::Integer,
+                "seektime",
+                "the amount of seconds to seek the current song to",
+            )
+            .required(true),
+        )
 }
