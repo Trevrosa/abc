@@ -10,10 +10,13 @@ use tokio::{
 };
 use tracing::{info, warn};
 
-use crate::{utils::reply::Replyer, TrackHandleKey};
 use crate::{
     utils::{context::CtxExt, ArgValue, Args},
     CLIENT,
+};
+use crate::{
+    utils::{reply::Replyer, spotify::extract_spotify},
+    TrackHandleKey,
 };
 
 pub async fn play(
@@ -45,6 +48,17 @@ pub async fn play(
         if Path::new("current_track").exists() {
             remove_file("current_track").await.unwrap();
         }
+
+        let url = if url.contains("spotify.com") {
+            ctx.reply(
+                "this is a spotify url, we need to do some stuff first.",
+                replyer,
+            )
+            .await;
+            &extract_spotify(ctx, replyer, url.as_str()).await?
+        } else {
+            url
+        };
 
         // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time
         ctx.yt_dlp(url.as_str(), Some("current_track"), "ba*", None, &mut greet)
