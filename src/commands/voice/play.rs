@@ -37,7 +37,7 @@ pub async fn play(
         return Err("faild to get guild");
     };
 
-    let mut greet = ctx.reply("downloading for u", replyer).await;
+    let mut greet = ctx.reply("ok..", replyer).await;
 
     if args.is_empty() {
         ctx.edit_msg("u dont say wat i play", &mut greet).await;
@@ -60,7 +60,7 @@ pub async fn play(
             url
         };
 
-        let mut greet = ctx.reply("", replyer).await;
+        let mut greet = ctx.reply("now im downloading..", replyer).await;
 
         // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time
         ctx.yt_dlp(url.as_str(), Some("current_track"), "ba*", None, &mut greet)
@@ -86,6 +86,8 @@ pub async fn play(
             drop(global);
             return Err("faild to create request");
         };
+        
+        ctx.edit_msg("downloading now", &mut greet).await;
 
         let Ok(response) = CLIENT.execute(request).await else {
             drop(global);
