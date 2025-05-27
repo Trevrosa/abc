@@ -59,10 +59,13 @@ impl EventHandler for Sniper {
         msg: MessageId,
         guild: Option<GuildId>,
     ) {
-        let msg = ctx.cache.message(channel, msg).map(|x| x.clone());
+        let msg = match ctx.cache.message(channel, msg).map(|x| x.clone()) {
+            msg @ Some(_) => msg,
+            None => ctx.http.get_message(channel, msg).await.ok(),
+        };
 
         let Some(msg) = msg else {
-            error!("tried to get message that didnt exist in cache");
+            error!("message didnt exist in cache or at all.");
             return;
         };
 
