@@ -21,6 +21,9 @@ impl EventHandler for PrefixCommands {
         if msg.author.id == ctx.cache.current_user().id {
             return;
         }
+        if !msg.content.starts_with('`') {
+            return;
+        }
 
         let replyer = Replyer::Prefix(&msg);
 
@@ -33,31 +36,19 @@ impl EventHandler for PrefixCommands {
             return;
         }
 
-        // TODO: make dm cmd work
-        // let msg = if msg.guild_id.is_none() {
-        //     let mut msg = msg;
-        //     msg.guild_id = Some(DEFAULT_GUILD.into());
-
-        //     msg
-        // } else {
-        //     msg
-        // };
-
-        // info!("c {} g {:?}", msg.channel_id, msg.guild_id);
-
         let typing = msg.channel_id.start_typing(&ctx.http);
 
         // here, we want to wait instead of panicking.
         #[allow(clippy::disallowed_methods)]
-        let global = ctx.data.read().await;
-        let blacklisted = global.get::<Blacklisted>().unwrap();
+        let data = ctx.data.read().await;
+        let blacklisted = data.get::<Blacklisted>().unwrap();
 
-        if !msg.content.starts_with('`') || blacklisted.contains(&msg.author.id.get()) {
-            drop(global);
+        if blacklisted.contains(&msg.author.id.get()) {
+            drop(data);
             return;
         }
 
-        drop(global);
+        drop(data);
 
         info!("received cmd '{}'", &msg.content);
 
@@ -72,7 +63,7 @@ impl EventHandler for PrefixCommands {
         // put attachments at the front of args
         if !msg.attachments.is_empty() {
             for attachment in &msg.attachments {
-                args.push(Arg::unnamed(ArgValue::Attachment(attachment.clone())));
+                args.push(Arg::unnamed(ArgValue::Attachment(attachment)));
             }
         }
 
