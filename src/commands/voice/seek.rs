@@ -22,16 +22,16 @@ pub async fn seek(
         return Err("not number");
     };
 
-    let global = ctx.data.try_read().unwrap();
+    let data = ctx.data.try_read().unwrap();
 
-    if global.contains_key::<TrackHandleKey>() {
-        let Some(track) = global.get::<TrackHandleKey>() else {
+    if data.contains_key::<TrackHandleKey>() {
+        let Some(track) = data.get::<TrackHandleKey>() else {
             return Err("song ended..");
         };
 
         #[allow(clippy::cast_sign_loss)]
         let seek = track.seek_async(Duration::from_secs(*to_seek as u64)).await;
-        drop(global);
+        drop(data);
 
         if seek.is_ok() {
             ctx.reply(format!("seekd to {to_seek} secs"), replyer).await;

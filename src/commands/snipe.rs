@@ -3,7 +3,7 @@ use serenity::all::{Context, CreateCommand, InteractionContext, MessageBuilder};
 use crate::utils::{context::CtxExt, reply::Replyer, sniping::MostRecentDeletedMessage};
 
 pub async fn snipe(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
-    let global = ctx.data.try_read().unwrap();
+    let data = ctx.data.try_read().unwrap();
 
     let guild_id = match replyer {
         Replyer::Prefix(msg) => msg.guild_id,
@@ -14,7 +14,7 @@ pub async fn snipe(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static 
         return Err("faild to get guild");
     };
 
-    let Some(deleted_msg) = global
+    let Some(deleted_msg) = data
         .get::<MostRecentDeletedMessage>()
         .unwrap() // should be safe since init in main
         .get(&guild_id)

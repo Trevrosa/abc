@@ -23,3 +23,6 @@ pub use blacklist::blacklist;
 
 pub mod get_song;
 pub use get_song::get_song;
+
+pub mod dog;
+pub use dog::dog;

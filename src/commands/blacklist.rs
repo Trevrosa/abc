@@ -5,6 +5,7 @@ use crate::{
     Blacklisted, OWNER,
 };
 
+// FIXME: fix this cmd
 pub async fn blacklist(
     ctx: &Context,
     replyer: &Replyer<'_>,
@@ -19,20 +20,20 @@ pub async fn blacklist(
         return Err("u canot");
     }
 
-    let mut global = ctx.data.write().await;
-    let blacklisted = global.get_mut::<Blacklisted>().unwrap();
+    let mut data = ctx.data.write().await;
+    let blacklisted = data.get_mut::<Blacklisted>().unwrap();
 
     if let Some(ArgValue::User(user, _)) = args.first_value() {
         let user = user.id.get();
 
         if let Some(seven) = blacklisted.iter().position(|x| x == &user) {
-            blacklisted.remove(seven);
-            drop(global);
+            blacklisted.swap_remove(seven);
+            drop(data);
 
             ctx.reply("unblackd", replyer).await;
         } else {
             blacklisted.push(user);
-            drop(global);
+            drop(data);
 
             ctx.reply("blackd", replyer).await;
         }
@@ -42,7 +43,7 @@ pub async fn blacklist(
             .map(|id| (id, ctx.cache.user(*id).unwrap().clone().name))
             .collect();
         let blacklisted = format!("```rust\n{blacklisted:#?}\n```");
-        drop(global);
+        drop(data);
 
         ctx.reply(blacklisted, replyer).await;
     }

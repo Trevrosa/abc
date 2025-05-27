@@ -61,9 +61,9 @@ pub async fn get_song(
             replyer,
         )
         .await;
-        extract_spotify(ctx, replyer, url.as_str()).await?
+        extract_spotify(ctx, replyer, url).await?
     } else {
-        url.to_string()
+        (*url).to_string()
     };
 
     let mut greet = ctx.reply("downloading ", replyer).await;

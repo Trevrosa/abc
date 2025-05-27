@@ -5,14 +5,14 @@ use crate::utils::reply::Replyer;
 use crate::TrackHandleKey;
 
 pub async fn stop(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
-    let global = ctx.data.try_read().unwrap();
-    if global.contains_key::<TrackHandleKey>() {
-        let Some(track) = global.get::<TrackHandleKey>().cloned() else {
+    let data = ctx.data.try_read().unwrap();
+    if data.contains_key::<TrackHandleKey>() {
+        let Some(track) = data.get::<TrackHandleKey>().cloned() else {
             return Err("faild to stop");
         };
 
         track.stop().unwrap();
-        drop(global); // unlock the typemap
+        drop(data); // unlock the typemap
 
         ctx.data.write().await.remove::<TrackHandleKey>();
         ctx.reply("stopd", replyer).await;

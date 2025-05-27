@@ -6,10 +6,10 @@ use crate::utils::reply::Replyer;
 use crate::TrackHandleKey;
 
 pub async fn set_loop(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
-    let global = ctx.data.try_read().unwrap();
+    let data = ctx.data.try_read().unwrap();
 
-    if global.contains_key::<TrackHandleKey>() {
-        let Some(track) = global.get::<TrackHandleKey>() else {
+    if data.contains_key::<TrackHandleKey>() {
+        let Some(track) = data.get::<TrackHandleKey>() else {
             return Err("faild to loop");
         };
 
@@ -19,12 +19,12 @@ pub async fn set_loop(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'stat
 
         if track_info.loops == LoopState::Infinite {
             track.disable_loop().unwrap();
-            drop(global);
+            drop(data);
 
             ctx.reply("stopd looping", replyer).await;
         } else {
             track.enable_loop().unwrap();
-            drop(global);
+            drop(data);
 
             ctx.reply("looping", replyer).await;
         }

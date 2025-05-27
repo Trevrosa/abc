@@ -4,7 +4,7 @@ use crate::utils::{context::CtxExt, reply::Replyer, sniping::MostRecentEditedMes
 
 #[allow(clippy::significant_drop_tightening)]
 pub async fn edit_snipe(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
-    let global = ctx.data.try_read().unwrap();
+    let data = ctx.data.try_read().unwrap();
 
     let guild_id = match replyer {
         Replyer::Prefix(msg) => msg.guild_id,
@@ -15,7 +15,7 @@ pub async fn edit_snipe(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'st
         return Err("faild to get guild");
     };
 
-    let Some(edited_msg) = global
+    let Some(edited_msg) = data
         .get::<MostRecentEditedMessage>()
         .unwrap() // should be safe since init in main
         .get(&guild_id)
