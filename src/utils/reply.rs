@@ -119,10 +119,9 @@ impl CreateReply {
 
         match row_with_space_left {
             Some(row) => row.push(button),
-            None => rows.push(CreateActionRow::Buttons(<[_]>::into_vec(
-                // TODO: should change the below to alloc::boxed::box_new([button]) if it becomes available to stable rust
-                Box::new([button]),
-            ))),
+            None => rows.push(CreateActionRow::Buttons(<[_]>::into_vec(Box::new([
+                button,
+            ])))),
         }
         self
     }
