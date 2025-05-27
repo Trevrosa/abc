@@ -3,18 +3,24 @@ use std::time::Duration;
 use serde::Deserialize;
 use serenity::all::{Context, CreateCommand};
 
-use crate::utils::context::CtxExt;
-use crate::utils::embed_message;
-use crate::utils::reply::Replyer;
-use crate::CLIENT;
+use crate::{
+    utils::{context::CtxExt, embed_message, reply::Replyer},
+    CLIENT,
+};
 
 #[allow(unused)]
 #[derive(Deserialize)]
-struct CatImage {
-    id: String,
-    url: String,
-    width: u32,
-    height: u32,
+pub struct Image {
+    pub url: String,
+    pub breeds: Option<Vec<Breed>>,
+}
+
+// TODO: use this
+#[allow(unused)]
+#[derive(Deserialize)]
+pub struct Breed {
+    name: String,
+    temperament: String,
 }
 
 pub async fn cat(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
@@ -31,8 +37,8 @@ pub async fn cat(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static st
         return Err("failed to send request");
     };
 
-    let resp = resp.json::<Vec<CatImage>>().await.unwrap();
-    let new_msg = embed_message("car", &resp[0].url);
+    let resp = resp.json::<Vec<Image>>().await.unwrap();
+    let new_msg = embed_message("car", &resp[0].url, None);
 
     ctx.reply(new_msg, replyer).await;
 

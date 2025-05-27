@@ -2,6 +2,7 @@
 token
 current_track*
 cat_apikey
+dog_apikey
 blacklisted
 external_host
 spotify_secret

@@ -8,7 +8,7 @@ use serenity::async_trait;
 use tracing::{error, info, warn};
 
 use crate::commands::voice::{pause, play, resume, seek, set_loop, status, stop};
-use crate::commands::{blacklist, cat, edit_snipe, get_song, join, leave, snipe, test};
+use crate::commands::{blacklist, cat, dog, edit_snipe, get_song, join, leave, snipe, test};
 use crate::handlers::command::handle_cmd;
 use crate::utils::context::CtxExt;
 use crate::utils::reply::Replyer;
@@ -19,8 +19,6 @@ pub struct SlashCommands;
 
 #[allow(clippy::unreadable_literal)]
 const TESTING_GUILD: u64 = 1131152701732954122;
-
-// FIXME: use Replyer and figure out args?
 
 #[async_trait]
 impl EventHandler for SlashCommands {
@@ -97,6 +95,7 @@ impl EventHandler for SlashCommands {
             get_song::register(),
             edit_snipe::register(),
             cat::register(),
+            dog::register(),
             blacklist::register(),
             stop::register(),
             status::register(),
