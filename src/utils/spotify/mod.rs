@@ -9,8 +9,9 @@ use std::time::Duration;
 
 use serenity::{
     all::{
-        Context, CreateButton, CreateInteractionResponse, CreateInteractionResponseMessage,
-        ReactionType,
+        Context, CreateButton,
+        CreateInteractionResponse::{Acknowledge, UpdateMessage},
+        CreateInteractionResponseMessage, ReactionType,
     },
     futures::StreamExt,
 };
@@ -52,7 +53,7 @@ pub async fn extract_spotify(
     spotify_url: &str,
 ) -> Result<String, &'static str> {
     let Ok(mut data) = ctx.data.try_write() else {
-        return Err("failed to read global data");
+        return Err("failed to write global data");
     };
 
     let token = data.get::<AccessToken>().expect("should at least be None");
@@ -226,12 +227,16 @@ pub async fn extract_spotify(
             "left_button" => {
                 // we are at the left-most page
                 if current_page == 0 {
+                    interaction
+                        .create_response(&ctx, Acknowledge)
+                        .await
+                        .unwrap();
                     continue;
                 }
 
                 current_page -= 1;
 
-                let response = CreateInteractionResponse::UpdateMessage(
+                let response = UpdateMessage(
                     CreateInteractionResponseMessage::new().content(fmt_result(current_page)),
                 );
                 interaction.create_response(&ctx, response).await.unwrap();
@@ -239,12 +244,16 @@ pub async fn extract_spotify(
             "right_button" => {
                 // we are at the right-most page
                 if current_page == results.len() {
+                    interaction
+                        .create_response(&ctx, Acknowledge)
+                        .await
+                        .unwrap();
                     continue;
                 }
 
                 current_page += 1;
 
-                let response = CreateInteractionResponse::UpdateMessage(
+                let response = UpdateMessage(
                     CreateInteractionResponseMessage::new().content(fmt_result(current_page)),
                 );
                 interaction.create_response(&ctx, response).await.unwrap();
@@ -252,7 +261,7 @@ pub async fn extract_spotify(
             "ok_button" => {
                 choice = Some(current_page);
                 interaction
-                    .create_response(&ctx, CreateInteractionResponse::Acknowledge)
+                    .create_response(&ctx, Acknowledge)
                     .await
                     .unwrap();
                 break;
