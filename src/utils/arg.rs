@@ -6,7 +6,7 @@ use serenity::all::{
 };
 use tracing::warn;
 
-pub struct Args<'a>(&'a [Arg]);
+pub struct Args<'a>(&'a [Arg<'a>]);
 
 impl Debug for Args<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -47,26 +47,26 @@ pub trait Get<Idx> {
 }
 
 impl<'a> Get<usize> for Args<'a> {
-    type Output = &'a Arg;
+    type Output = &'a Arg<'a>;
     fn get(&self, index: usize) -> Option<Self::Output> {
         self.0.get(index)
     }
 }
 
 impl<'a> Get<&'a str> for Args<'a> {
-    type Output = &'a Arg;
+    type Output = &'a Arg<'a>;
     fn get(&self, index: &'a str) -> Option<Self::Output> {
         self.0
             .iter()
-            .find(|a| a.name.as_ref().is_some_and(|n| n == index))
+            .find(|a| a.name.as_ref().is_some_and(|n| n == &index))
     }
 }
 
 /// Taken mostly from [`serenity::all::ResolvedOption`]
 #[derive(Debug)]
-pub struct Arg {
-    pub name: Option<String>,
-    pub value: ArgValue,
+pub struct Arg<'a> {
+    pub name: Option<&'a str>,
+    pub value: ArgValue<'a>,
 }
 
 /// See if an [`Arg`]'s value can be coerced to `T`, and is equal to `cmp`.
@@ -74,7 +74,7 @@ pub trait Is<T> {
     fn is(&self, cmp: T) -> bool;
 }
 
-impl Is<bool> for Arg {
+impl Is<bool> for Arg<'_> {
     fn is(&self, cmp: bool) -> bool {
         let ArgValue::Boolean(val) = self.value else {
             return false;
@@ -83,25 +83,25 @@ impl Is<bool> for Arg {
     }
 }
 
-impl Is<&str> for Arg {
+impl Is<&str> for Arg<'_> {
     fn is(&self, cmp: &str) -> bool {
-        let ArgValue::String(val) = &self.value else {
+        let ArgValue::String(val) = self.value else {
             return false;
         };
         val == cmp
     }
 }
 
-impl Arg {
+impl<'a> Arg<'a> {
     /// Create an unnamed argument.
-    pub fn unnamed(value: ArgValue) -> Self {
+    pub fn unnamed(value: ArgValue<'a>) -> Self {
         Self { name: None, value }
     }
 
     /// Create the argument from a [`ResolvedOption`], usually from a [`serenity::all::CommandInteraction`]
-    pub fn from_resolved(option: ResolvedOption<'_>) -> Option<Self> {
+    pub fn from_resolved(option: ResolvedOption<'a>) -> Option<Self> {
         Some(Self {
-            name: Some(option.name.to_string()),
+            name: Some(option.name),
             value: ArgValue::from_resolved(option)?,
         })
     }
@@ -112,26 +112,26 @@ impl Arg {
 /// Taken mostly from [`serenity::all::ResolvedValue`]
 #[derive(Debug)]
 #[allow(unused)]
-pub enum ArgValue {
+pub enum ArgValue<'a> {
     Boolean(bool),
     /// 64-bit signed integer.
     Integer(i64),
     /// 64-bit float.
     Number(f64),
     /// [`Self::from_str`] only parses to this after trying to parse every other type.
-    String(String),
+    String(&'a str),
     // SubCommand(Vec<ResolvedOption<'a>>),
     // SubCommandGroup(Vec<ResolvedOption<'a>>),
     Channel(PartialChannel),
     Role(Role),
     User(User, Box<Option<PartialMember>>),
-    Attachment(Attachment),
+    Attachment(&'a Attachment),
     NotResolved,
 }
 
 /// See [`serenity::all::PartialChannel`].
 ///
-/// Copied here since I couldn't construct the original
+/// Copied here so I can construct it
 #[derive(Debug)]
 #[allow(unused)]
 pub struct PartialChannel {
@@ -166,20 +166,22 @@ impl From<&serenity::all::PartialChannel> for PartialChannel {
     }
 }
 
-// FIXME: maybe this is better
-// let id: Result<u64, std::num::ParseIntError> = if args[1].starts_with("<#") {
-//     args[1][2..args[1].len() - 1].parse::<u64>()
-// } else if args[1].starts_with("https://discord.com/channels/") {
-//     args[1].split('/').collect::<Vec<&str>>()[5].parse::<u64>()
-// } else {
-//     args[1].parse::<u64>()
-// };
-fn parse_channel(guild: Option<&Guild>, str: &str) -> Option<PartialChannel> {
-    if !str.starts_with("<#") && !str.ends_with('>') {
+/// Helper to parse ids from string
+fn parse_id(str: &str, prefix: &str, suffix: &str) -> Option<u64> {
+    if !str.starts_with(prefix) && !str.ends_with(suffix) {
         return None;
     }
 
-    let id = str[2..str.len() - 1].parse().ok()?;
+    str[prefix.len()..str.len() - suffix.len()].parse().ok()
+}
+
+/// Find a channel from a string and the channel's guild.
+fn parse_channel(guild: Option<&Guild>, str: &str) -> Option<PartialChannel> {
+    fn parse_link(str: &str) -> Option<u64> {
+        str.split('/').nth(5)?.parse().ok()
+    }
+
+    let id = parse_id(str, "<#", ">").or_else(|| parse_link(str))?.into();
     let channel = guild?.channels.get(&id)?;
 
     let channel = PartialChannel {
@@ -194,36 +196,12 @@ fn parse_channel(guild: Option<&Guild>, str: &str) -> Option<PartialChannel> {
     Some(channel)
 }
 
-// FIXME: is this ok? maybe this is better:
-// let user: u64 = if let Ok(user) = args[1].parse::<u64>() {
-//     if !members.contains_key(&UserId::new(user)) {
-//         return Err("that not real");
-//     }
-
-//     user
-// } else if args[1].starts_with("<@") {
-//     let Ok(user) = args[1][2..args[1].len() - 1].parse::<u64>() else {
-//         return Err("that not real");
-//     };
-
-//     if !members.contains_key(&UserId::new(user)) {
-//         return Err("that not real");
-//     }
-
-//     user
-// } else {
-//     return Err("that not real");
-// };
 fn parse_user(
     cache: &Cache,
     guild: Option<&Guild>,
     str: &str,
 ) -> Option<(User, Option<PartialMember>)> {
-    if !str.starts_with("<@") && !str.ends_with('>') {
-        return None;
-    }
-
-    let id = str[2..str.len() - 1].parse().ok()?;
+    let id = parse_id(str, "<@", ">")?.into();
     let member = guild?
         .members
         .get(&id)
@@ -234,21 +212,17 @@ fn parse_user(
 }
 
 fn parse_role(guild: Option<&Guild>, str: &str) -> Option<Role> {
-    if !str.starts_with("<@&") && !str.ends_with('>') {
-        return None;
-    }
-
-    let id = str[3..str.len() - 1].parse().ok()?;
+    let id = parse_id(str, "<@&", ">")?.into();
     guild?.roles.get(&id).cloned()
 }
 
-impl ArgValue {
+impl<'a> ArgValue<'a> {
     /// Is guaranteed to return a non [`Arg::NotResolved`] value;
     /// if all other [`Arg`] types can't be parsed, it fallbacks to [`Arg::String`].
     ///
     /// Cannot parse to [`Arg::Attachment`].
     #[inline]
-    pub fn from_str(cache: &Cache, guild_id: Option<GuildId>, str: &str) -> Self {
+    pub fn from_str(cache: &Cache, guild_id: Option<GuildId>, str: &'a str) -> Self {
         // TODO: test this
 
         let parsed = if let Some(guild_id) = guild_id {
@@ -279,27 +253,27 @@ impl ArgValue {
         } else if let Ok(num) = str.parse() {
             Self::Number(num)
         } else {
-            Self::String(str.to_string())
+            Self::String(str)
         }
     }
 
     /// Will return [`None`] if `option.value` matches [`serenity::all::ResolvedValue::Autocomplete`],
     /// [`serenity::all::ResolvedValue::SubCommand`], or [`serenity::all::ResolvedValue::SubCommandGroup`]
     #[inline]
-    pub fn from_resolved(option: ResolvedOption<'_>) -> Option<Self> {
+    pub fn from_resolved(option: ResolvedOption<'a>) -> Option<Self> {
         use serenity::all::ResolvedValue::{
             Attachment, Autocomplete, Boolean, Channel, Integer, Number, Role, String, SubCommand,
             SubCommandGroup, Unresolved, User,
         };
 
         let arg = match option.value {
-            Attachment(a) => Self::Attachment(a.clone()),
+            Attachment(a) => Self::Attachment(a),
             Boolean(b) => Self::Boolean(b),
             Channel(c) => Self::Channel(c.into()),
             Integer(i) => Self::Integer(i),
             Number(n) => Self::Number(n),
             Role(r) => Self::Role(r.clone()),
-            String(s) => Self::String(s.to_string()),
+            String(s) => Self::String(s),
             User(u, m) => Self::User(u.clone(), Box::new(m.cloned())),
             Unresolved(_) => Self::NotResolved,
             Autocomplete { .. } | SubCommand(_) | SubCommandGroup(_) => return None,
