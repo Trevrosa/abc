@@ -107,6 +107,7 @@ impl<'a> Arg<'a> {
     }
 }
 
+// TODO: can more be & ref'ed?
 /// The possible arguments that a command can receive.
 ///
 /// Taken mostly from [`serenity::all::ResolvedValue`]
