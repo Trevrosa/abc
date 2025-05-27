@@ -13,6 +13,7 @@ use crate::handlers::command::handle_cmd;
 use crate::utils::context::CtxExt;
 use crate::utils::reply::Replyer;
 use crate::utils::{Arg, Args};
+use crate::Blacklisted;
 
 pub struct SlashCommands;
 
@@ -27,6 +28,28 @@ impl EventHandler for SlashCommands {
         let Interaction::Command(command) = interaction else {
             return;
         };
+
+        // drop `data` after we are done
+        {
+            let data = ctx.data.read().await;
+            let blacklisted = data.get::<Blacklisted>().unwrap();
+
+            if blacklisted.contains(&command.user.id.get()) {
+                drop(data);
+
+                command
+                    .create_response(
+                        &ctx.http,
+                        CreateInteractionResponse::Message(
+                            CreateInteractionResponseMessage::new().content("u blackd"),
+                        ),
+                    )
+                    .await
+                    .unwrap();
+
+                return;
+            }
+        }
 
         info!("received slash cmd `{}`", command.data.name);
 
