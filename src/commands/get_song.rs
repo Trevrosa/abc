@@ -10,32 +10,11 @@ use crate::utils::{
     context::CtxExt,
     reply::{CreateReply, Replyer},
     spotify::extract_spotify,
-    ArgValue, Args, Get, Is,
+    ArgValue, Args, DeleteWhenDone, Get, Is,
 };
 
 /// discord's free upload limit in bytes
 const DISCORD_UPLOAD_LIMIT: u64 = 10 * 1000 * 1000;
-
-/// A guard struct that removes `self.path` after `self` is [`drop()`]ped.
-struct DeleteWhenDone<'a> {
-    path: &'a Path,
-}
-
-impl Drop for DeleteWhenDone<'_> {
-    fn drop(&mut self) {
-        let path = self.path.to_owned();
-        tokio::task::spawn_blocking(move || {
-            if let Err(err) = std::fs::remove_dir_all(&path) {
-                // we don't care if `path` wasn't found.
-                if err.kind() != std::io::ErrorKind::NotFound {
-                    error!("failed to clean {path:?}: {err:#?}");
-                }
-            } else {
-                info!("cleaned path {path:?}");
-            }
-        });
-    }
-}
 
 pub async fn get_song(
     ctx: &Context,
@@ -80,9 +59,7 @@ pub async fn get_song(
         return Err("");
     }
 
-    let _cleanup = DeleteWhenDone {
-        path: download_path,
-    };
+    let _cleanup = DeleteWhenDone::new(download_path);
 
     if let Err(err) = fs::create_dir(download_path).await {
         error!("failed to create path {download_path:?}: {err:#?}");

@@ -11,7 +11,7 @@ use tokio::{
 use tracing::{info, warn};
 
 use crate::{
-    utils::{context::CtxExt, ArgValue, Args},
+    utils::{context::CtxExt, ArgValue, Args, DeleteWhenDone},
     CLIENT,
 };
 use crate::{
@@ -19,6 +19,7 @@ use crate::{
     TrackHandleKey,
 };
 
+// TODO: queuing
 pub async fn play(
     ctx: &Context,
     replyer: &Replyer<'_>,
@@ -44,9 +45,16 @@ pub async fn play(
         return Err("");
     }
 
+    let track_path = format!("current_track{}", guild.get());
+    let track_path = Path::new(&track_path);
+
+    // its ok to delete the file because we read it to memory after anyway
+    let _cleanup = DeleteWhenDone::new(track_path);
+
+    let mut is_spotify = false;
     let input: Bytes = if let Some(ArgValue::String(url)) = args.first_value() {
-        if Path::new("current_track").exists() {
-            remove_file("current_track").await.unwrap();
+        if Path::new(&track_path).exists() {
+            remove_file(&track_path).await.unwrap();
         }
 
         let url = if url.contains("spotify.com") {
@@ -55,19 +63,19 @@ pub async fn play(
                 replyer,
             )
             .await;
-            &extract_spotify(ctx, replyer, url.as_str()).await?
+            is_spotify = true;
+            extract_spotify(ctx, replyer, url).await?
         } else {
-            url
+            (*url).to_string()
         };
 
         let mut greet = ctx.reply("now im downloading..", replyer).await;
 
-        // FIXME: change to current_track{GUILD} so it works for multiple servers at the same time
-        ctx.yt_dlp(url.as_str(), Some("current_track"), "ba*", None, &mut greet)
+        ctx.yt_dlp(url.as_str(), Some(&track_path), "ba*", None, &mut greet)
             .await?;
 
         let mut bytes = Vec::new();
-        if File::open("current_track")
+        if File::open(&track_path)
             .await
             .unwrap()
             .read_to_end(&mut bytes)
@@ -80,17 +88,17 @@ pub async fn play(
 
         bytes.into()
     } else if let Some(ArgValue::Attachment(attachment)) = args.first_value() {
-        let global = ctx.data.try_read().unwrap();
+        let data = ctx.data.try_read().unwrap();
 
         let Ok(request) = CLIENT.get(&attachment.url).build() else {
-            drop(global);
+            drop(data);
             return Err("faild to create request");
         };
-        
+
         ctx.edit_msg("downloading now", &mut greet).await;
 
         let Ok(response) = CLIENT.execute(request).await else {
-            drop(global);
+            drop(data);
             return Err("faild to download");
         };
 
@@ -98,7 +106,7 @@ pub async fn play(
 
         let Ok(bytes) = response.bytes().await else {
             ctx.edit_msg("faild to decode file", &mut greet).await;
-            drop(global);
+            drop(data);
             return Err("");
         };
 
@@ -154,7 +162,13 @@ pub async fn play(
         drop(handler);
 
         ctx.data.write().await.insert::<TrackHandleKey>(track);
-        ctx.edit_msg("playing for u!", &mut greet).await;
+        if is_spotify {
+            ctx.reply("playing for u!", replyer).await;
+        } else {
+            ctx.edit_msg("playing for u!", &mut greet).await;
+        }
+    } else if is_spotify {
+        ctx.reply("faild to get voice handler", replyer).await;
     } else {
         ctx.edit_msg("faild to get voice handler", &mut greet).await;
     }
