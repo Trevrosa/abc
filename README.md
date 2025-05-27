@@ -4,9 +4,9 @@
 each module in `src/commands` must have a function with this signature:
 
 ```rust
-async fn command(ctx: &Context, replyer: &Replyer/*, args: &[Arg]*/) -> Result<(), &'static str>
+async fn command(ctx: &Context, replyer: &Replyer/*, args: Args*/) -> Result<(), &'static str>
 ```
-(where `Context` is `serenity::client::Context`, `Message` is `utils::reply::Replyer`, `Arg` is `utils::arg::Arg`.)
+(where `Context` is `serenity::client::Context`, `Message` is `utils::reply::Replyer`, `Args` is `utils::arg::Args`.)
 The commented part is optional.
 
 and, to support slash commands, contain the function:
@@ -26,6 +26,7 @@ or be a module that re-exports other modules that conform to above.
 - install [mold](https://github.com/rui314/mold)
 - create file `token` at project root and put your bot token in
 - create file `cat_apikey` at project root and put your [cat api key](https://thecatapi.com) in
+- create file `dog_apikey` at project root and put your [dog api key](https://thedogapi.com) in
 - for the command `getsong`:
   - if you have a folder you want to put files larger than 10mb, set the `ABC_SHARED_DIR` environment variable to that folder.
   - if you have an external host url, create file `external_host` and put the base url in. if you don't, just `touch external_host`

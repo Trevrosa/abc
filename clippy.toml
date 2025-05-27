@@ -1,5 +1,5 @@
 disallowed-methods = [
-    { path = "tokio::sync::rwlock::RwLock::read", reason = "use try_read instead; prefer to panic instead of wait for lock" },
+    # { path = "tokio::sync::rwlock::RwLock::read", reason = "use try_read instead; prefer to panic instead of wait for lock" },
     { path = "serenity::model::channel::message::Message::reply", reason = "see crate::utils::context:Ext for given extension method instead" },
     { path = "typemap_rev::TypeMap::clear", reason = "never clear the client TypeMap" }
 ]

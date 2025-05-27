@@ -20,11 +20,29 @@
 		"scope": "rust",
 		"prefix": "cmd",
 		"body": [
-			"use serenity::all::{Context, Message};",
+			"use serenity::all::{Context, CreateCommand};",
+			"use crate::utils::Replyer;",
 			"",
-			"pub async fn $1(ctx: &Context, msg: &Message) -> Result<(), &'static str> {",
+			"pub async fn $1(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {",
 			"\tOk(())",
 			"}",
+			"",
+			"pub fn register() -> CreateCommand {}"
+		]
+	},
+
+	"Create a serenity command with args": {
+		"scope": "rust",
+		"prefix": "cmdargs",
+		"body": [
+			"use serenity::all::{Context, CreateCommand};",
+			"use crate::utils::{Replyer, Args};",
+			"",
+			"pub async fn $1(ctx: &Context, replyer: &Replyer<'_>, args: Args<'_>) -> Result<(), &'static str> {",
+			"\tOk(())",
+			"}",
+			"",
+			"pub fn register() -> CreateCommand {}"
 		]
 	}
 }
