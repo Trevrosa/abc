@@ -8,8 +8,6 @@ use crate::{
     utils::{reply::Replyer, Args},
 };
 
-// TODO: maybe use https://crates.io/crates/phf
-
 #[inline]
 pub(super) async fn handle_cmd(
     cmd: &str,
@@ -22,7 +20,6 @@ pub(super) async fn handle_cmd(
         "test" => commands::test(ctx, replyer).await,
         "cat" => commands::cat(ctx, replyer).await,
         "dog" => commands::dog(ctx, replyer).await,
-        "black" => commands::blacklist(ctx, replyer, args).await,
 
         "join" => commands::join(ctx, replyer, args).await,
         "leave" => commands::leave(ctx, replyer).await,

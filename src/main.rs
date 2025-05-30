@@ -28,12 +28,6 @@ impl TypeMapKey for TrackHandleKey {
     type Value = TrackHandle;
 }
 
-pub struct Blacklisted;
-
-impl TypeMapKey for Blacklisted {
-    type Value = Vec<u64>;
-}
-
 pub struct CrateCommand {
     name: &'static str
 }
@@ -62,19 +56,11 @@ pub const SEVEN: u64 = 674143957755756545;
 pub const OWNER: u64 = 758926553454870529;
 
 const YT_TOKEN_PATH: &str = "yt_token";
-const BLACKLISTED_PATH: &str = "blacklisted";
 
-// serialize blacklisted users to disk, then disconnect all shards
+// serialize some saved state to disk, then disconnect all shards
 async fn end_handler(disconnector: Option<Disconnector>) {
     if let Some(disconnector) = disconnector {
         if let Ok(global) = disconnector.data.try_read() {
-            let blacklisted =
-                serde::encode_to_vec(global.get::<Blacklisted>().unwrap(), config::standard())
-                    .unwrap();
-            fs::write(BLACKLISTED_PATH, blacklisted).unwrap();
-
-            info!("saved blacklisted users");
-
             if let Some(yt_token) = global.get::<AccessToken>().unwrap() {
                 let yt_token = serde::encode_to_vec(yt_token, config::standard()).unwrap();
                 fs::write(YT_TOKEN_PATH, yt_token).unwrap();
@@ -108,23 +94,6 @@ async fn main() -> Result<()> {
     let mut cache_settings = Settings::default();
     cache_settings.max_messages = 50;
 
-    let blacklisted: Vec<u64> = fs::read(BLACKLISTED_PATH).map_or_else(
-        |_err| {
-            warn!("no {BLACKLISTED_PATH} to load from");
-            Vec::new()
-        },
-        |stored| match serde::decode_from_slice(&stored, config::standard()) {
-            Ok((blacklisted, _len)) => {
-                info!("loaded blacklisted users");
-                blacklisted
-            }
-            Err(e) => {
-                error!("failed to load blacklisted users ({e}); using empty");
-                Vec::new()
-            }
-        },
-    );
-
     let access_token = fs::read(YT_TOKEN_PATH).map_or_else(
         |_err| {
             warn!("no {YT_TOKEN_PATH} to load from");
@@ -149,7 +118,6 @@ async fn main() -> Result<()> {
         .event_handler(handlers::SlashCommands)
         .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
         .type_map_insert::<MostRecentEditedMessage>(HashMap::new())
-        .type_map_insert::<Blacklisted>(blacklisted)
         .type_map_insert::<spotify::AccessToken>(None)
         .type_map_insert::<ytmusic::AccessToken>(access_token)
         .cache_settings(cache_settings)

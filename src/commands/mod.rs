@@ -18,9 +18,6 @@ pub use edit_snipe::edit_snipe;
 pub mod snipe;
 pub use snipe::snipe;
 
-pub mod blacklist;
-pub use blacklist::blacklist;
-
 pub mod get_song;
 pub use get_song::get_song;
 

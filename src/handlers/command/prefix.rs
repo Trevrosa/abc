@@ -11,7 +11,7 @@ use crate::{
     utils::{reply::Replyer, Arg, ArgValue, Args},
     OWNER,
 };
-use crate::{utils::context::CtxExt, Blacklisted, SEVEN};
+use crate::{utils::context::CtxExt, SEVEN};
 
 pub struct PrefixCommands;
 
@@ -37,18 +37,6 @@ impl EventHandler for PrefixCommands {
         }
 
         let typing = msg.channel_id.start_typing(&ctx.http);
-
-        // here, we want to wait instead of panicking.
-        #[allow(clippy::disallowed_methods)]
-        let data = ctx.data.read().await;
-        let blacklisted = data.get::<Blacklisted>().unwrap();
-
-        if blacklisted.contains(&msg.author.id.get()) {
-            drop(data);
-            return;
-        }
-
-        drop(data);
 
         info!("received cmd '{}'", &msg.content);
 

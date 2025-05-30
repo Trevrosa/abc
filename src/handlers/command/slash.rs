@@ -8,12 +8,11 @@ use serenity::async_trait;
 use tracing::{error, info, warn};
 
 use crate::commands::voice::{pause, play, resume, seek, set_loop, status, stop};
-use crate::commands::{blacklist, cat, dog, edit_snipe, get_song, join, leave, snipe, test};
+use crate::commands::{cat, dog, edit_snipe, get_song, join, leave, snipe, test};
 use crate::handlers::command::handle_cmd;
 use crate::utils::context::CtxExt;
 use crate::utils::reply::Replyer;
 use crate::utils::{Arg, Args};
-use crate::Blacklisted;
 
 pub struct SlashCommands;
 
@@ -26,28 +25,6 @@ impl EventHandler for SlashCommands {
         let Interaction::Command(command) = interaction else {
             return;
         };
-
-        // drop `data` after we are done
-        {
-            let data = ctx.data.read().await;
-            let blacklisted = data.get::<Blacklisted>().unwrap();
-
-            if blacklisted.contains(&command.user.id.get()) {
-                drop(data);
-
-                command
-                    .create_response(
-                        &ctx.http,
-                        CreateInteractionResponse::Message(
-                            CreateInteractionResponseMessage::new().content("u blackd"),
-                        ),
-                    )
-                    .await
-                    .unwrap();
-
-                return;
-            }
-        }
 
         info!("received slash cmd `{}`", command.data.name);
 
@@ -96,7 +73,6 @@ impl EventHandler for SlashCommands {
             edit_snipe::register(),
             cat::register(),
             dog::register(),
-            blacklist::register(),
             stop::register(),
             status::register(),
             set_loop::register(),
