@@ -38,7 +38,7 @@ or be a module that re-exports other modules that conform to above.
 
 ## notes
 - be careful using `ctx.data.read()`: it can deadlock since `ctx.data` is an instance of `Arc<RwLock<..>>`. a way to make these locks more clear is to use `ctx.data.try_read()`, and handle its result accordingly.
-- `crate::utils::context::Ext` includes extension methods to `serenity::client::Context`
+- `utils::context::Ext` includes extension methods to `serenity::client::Context`
 - `crate::serenity_ctrlc` is taken mostly from [yehuthi/serenity_ctrlc](https://github.com/yehuthi/serenity_ctrlc/) (thanks!). i have changed it to make it work with serenity 0.12.1, and also provide `ctx.data` to handlers.
 - `clippy.toml` includes "forbidden" methods. these are only checked for when using `clippy` instead of `cargo check`
 - `Cross.toml` is used by [cross](https://github.com/cross-rs/cross/) to cross-compile

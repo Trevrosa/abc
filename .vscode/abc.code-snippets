@@ -21,7 +21,7 @@
 		"prefix": "cmd",
 		"body": [
 			"use serenity::all::{Context, CreateCommand};",
-			"use crate::utils::Replyer;",
+			"use utils::Replyer;",
 			"",
 			"pub async fn $1(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {",
 			"\tOk(())",
@@ -36,7 +36,7 @@
 		"prefix": "cmdargs",
 		"body": [
 			"use serenity::all::{Context, CreateCommand};",
-			"use crate::utils::{Replyer, Args};",
+			"use utils::{Replyer, Args};",
 			"",
 			"pub async fn $1(ctx: &Context, replyer: &Replyer<'_>, args: Args<'_>) -> Result<(), &'static str> {",
 			"\tOk(())",
