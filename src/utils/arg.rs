@@ -30,12 +30,12 @@ impl<'a> Args<'a> {
     }
 
     /// Returns the first argument, or `None` if it is empty.
-    pub fn first(&self) -> Option<&Arg> {
+    pub fn first(&'a self) -> Option<&'a Arg<'a>> {
         self.0.first()
     }
 
     /// Returns the first argument's value, or `None` if it is empty.
-    pub fn first_value(&self) -> Option<&ArgValue> {
+    pub fn first_value(&'a self) -> Option<&'a ArgValue<'a>> {
         self.0.first().map(|a| &a.value)
     }
 }

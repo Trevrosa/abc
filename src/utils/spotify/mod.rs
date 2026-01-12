@@ -207,7 +207,7 @@ pub async fn extract_spotify(
 
     // show the first result by default
     let paginated = CreateReply::new()
-        .content(fmt_result(current_page).to_string())
+        .content(fmt_result(current_page))
         .button(left_button)
         .button(right_button)
         .button(ok_button)
