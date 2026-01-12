@@ -3,7 +3,7 @@
 use serenity::all::{
     create_poll, CommandInteraction, Context, CreateActionRow, CreateAllowedMentions,
     CreateAttachment, CreateButton, CreateEmbed, CreateInteractionResponseFollowup, CreateMessage,
-    CreatePoll, Message,
+    CreatePoll, GuildId, Message, User,
 };
 
 /// This enum tells us *how* we are going to be replying.
@@ -36,6 +36,22 @@ impl Replyer<'_> {
         match self {
             Self::Slash(int) => int,
             Self::Prefix(_) => panic!("Expected slash variant, but got prefix."),
+        }
+    }
+
+    /// Get the [`GuildId`] from either the message or command interaction.
+    pub fn guild(&self) -> Option<GuildId> {
+        match self {
+            &Replyer::Prefix(msg) => msg.guild_id,
+            &Replyer::Slash(int) => int.guild_id,
+        }
+    }
+
+    /// Get the user we are replying to.
+    pub fn user(&self) -> &User {
+        match self {
+            &Replyer::Prefix(msg) => &msg.author,
+            &Replyer::Slash(int) => &int.user,
         }
     }
 }

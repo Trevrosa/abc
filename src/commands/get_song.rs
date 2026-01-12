@@ -47,10 +47,7 @@ pub async fn get_song(
 
     let mut greet = ctx.reply("downloading ", replyer).await;
 
-    let idstring = match replyer {
-        Replyer::Prefix(msg) => msg.author.id.get().to_string(),
-        Replyer::Slash(int) => int.user.id.get().to_string(),
-    };
+    let idstring = replyer.user().id.get().to_string();
     let download_path = Path::new(&idstring);
 
     if download_path.exists() {
@@ -69,10 +66,12 @@ pub async fn get_song(
     // we use yt-dlp output templates (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
     let output = download_path.join("%(title)s [%(id)s].%(ext)s");
 
-    let no_video =
-        args.get("novid").is_some_and(|a| a.is(true)) || args.get(1).is_some_and(|a| a.is("novid"));
-    let mp3 =
-        args.get("mp3").is_some_and(|a| a.is(true)) || args.get(2).is_some_and(|a| a.is("mp3"));
+    let no_video = args
+        .get_or("novid", 1)
+        .is_some_and(|a| a.is(true) || a.is("novid"));
+    let mp3 = args
+        .get_or("mp3", 2)
+        .is_some_and(|a| a.is(true) || a.is("mp3"));
 
     // `ba*` by default, `ba` if the user wants it.
     let download_format = if no_video { "ba" } else { "ba*" };

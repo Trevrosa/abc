@@ -40,22 +40,30 @@ impl<'a> Args<'a> {
     }
 }
 
-/// Like [`Index`], but we don't have to return a `ref` of [`Get::Output`].
-pub trait Get<Idx> {
-    type Output;
-    fn get(&self, index: Idx) -> Option<Self::Output>;
+/// Like [`std::ops::Index`], but we don't have to return a `ref` of the `Output`.
+pub trait Get<Idx, Output> {
+    fn get(&self, index: Idx) -> Option<Output>;
+    fn get_or<Idx2>(&self, index: Idx, index2: Idx2) -> Option<Output>
+    where
+        Self: Get<Idx2, Output>,
+    {
+        let a = <Self as Get<Idx, Output>>::get(self, index);
+        let b = <Self as Get<Idx2, Output>>::get(self, index2);
+
+        a.or(b)
+    }
 }
 
-impl<'a> Get<usize> for Args<'a> {
-    type Output = &'a Arg<'a>;
-    fn get(&self, index: usize) -> Option<Self::Output> {
+type GotArg<'a> = &'a Arg<'a>;
+
+impl<'a> Get<usize, GotArg<'a>> for Args<'a> {
+    fn get(&self, index: usize) -> Option<GotArg<'a>> {
         self.0.get(index)
     }
 }
 
-impl<'a> Get<&'a str> for Args<'a> {
-    type Output = &'a Arg<'a>;
-    fn get(&self, index: &'a str) -> Option<Self::Output> {
+impl<'a> Get<&'a str, GotArg<'a>> for Args<'a> {
+    fn get(&self, index: &'a str) -> Option<GotArg<'a>> {
         self.0
             .iter()
             .find(|a| a.name.as_ref().is_some_and(|n| n == &index))

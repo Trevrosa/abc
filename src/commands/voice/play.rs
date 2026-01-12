@@ -29,12 +29,7 @@ pub async fn play(
         return Err("voice client not init");
     };
 
-    let guild = match replyer {
-        Replyer::Prefix(msg) => msg.guild_id,
-        Replyer::Slash(int) => int.guild_id,
-    };
-
-    let Some(guild) = guild else {
+    let Some(guild_id) = replyer.guild() else {
         return Err("faild to get guild");
     };
 
@@ -45,7 +40,7 @@ pub async fn play(
         return Err("");
     }
 
-    let track_path = format!("current_track{}", guild.get());
+    let track_path = format!("current_track{}", guild_id.get());
     let track_path = Path::new(&track_path);
 
     // its ok to delete the file because we read it to memory after anyway
@@ -117,7 +112,7 @@ pub async fn play(
         return Err("");
     };
 
-    let Ok(channels) = guild.channels(&ctx).await else {
+    let Ok(channels) = guild_id.channels(&ctx).await else {
         ctx.edit_msg("faild to get channels", &mut greet).await;
         return Err("");
     };
@@ -129,19 +124,19 @@ pub async fn play(
     };
 
     // join vc if bot has never joined a vc
-    if manager.get(guild).is_none() {
+    if manager.get(guild_id).is_none() {
         let Some(channel) = ctx.find_user_channel(user, ChannelType::Voice, &mut channels) else {
             ctx.edit_msg("u arent in a vc", &mut greet).await;
             return Err("");
         };
 
-        if manager.join(guild, channel.id).await.is_err() {
+        if manager.join(guild_id, channel.id).await.is_err() {
             ctx.edit_msg("faild to join u", &mut greet).await;
             return Err("");
         }
     }
 
-    if let Some(handler) = manager.get(guild) {
+    if let Some(handler) = manager.get(guild_id) {
         let mut handler = handler.lock().await;
 
         // join vc if bot is not currently in a vc

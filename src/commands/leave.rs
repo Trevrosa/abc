@@ -7,12 +7,7 @@ pub async fn leave(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static 
         return Err("voice client not init");
     };
 
-    let guild_id = match replyer {
-        Replyer::Prefix(msg) => msg.guild_id,
-        Replyer::Slash(int) => int.guild_id,
-    };
-
-    let Some(guild_id) = guild_id else {
+    let Some(guild_id) = replyer.guild() else {
         return Err("faild to get guild");
     };
 
