@@ -155,10 +155,6 @@ pub async fn get_song(
     Ok(())
 }
 
-inventory::submit! {
-    crate::CrateCommand::new("getsong")
-}
-
 pub fn register() -> CreateCommand {
     CreateCommand::new("getsong")
         .description("get a song from its url, supporting spotify")

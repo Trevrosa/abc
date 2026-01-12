@@ -28,18 +28,6 @@ impl TypeMapKey for TrackHandleKey {
     type Value = TrackHandle;
 }
 
-pub struct CrateCommand {
-    name: &'static str
-}
-
-impl CrateCommand {
-    pub const fn new(name: &'static str) -> Self {
-        Self { name }
-    }
-}
-
-inventory::collect!(CrateCommand);
-
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
