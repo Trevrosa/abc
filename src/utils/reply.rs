@@ -41,17 +41,17 @@ impl Replyer<'_> {
 
     /// Get the [`GuildId`] from either the message or command interaction.
     pub fn guild(&self) -> Option<GuildId> {
-        match self {
-            &Replyer::Prefix(msg) => msg.guild_id,
-            &Replyer::Slash(int) => int.guild_id,
+        match *self {
+            Replyer::Prefix(msg) => msg.guild_id,
+            Replyer::Slash(int) => int.guild_id,
         }
     }
 
     /// Get the user we are replying to.
     pub fn user(&self) -> &User {
-        match self {
-            &Replyer::Prefix(msg) => &msg.author,
-            &Replyer::Slash(int) => &int.user,
+        match *self {
+            Replyer::Prefix(msg) => &msg.author,
+            Replyer::Slash(int) => &int.user,
         }
     }
 }
