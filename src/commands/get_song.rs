@@ -75,18 +75,19 @@ pub async fn get_song(
 
     // `ba*` by default, `ba` if the user wants it.
     let download_format = if no_video { "ba" } else { "ba*" };
-    let audio_only_args: Option<&[&str]> = if mp3 {
+    // TODO: handle playlists separately
+    let args: &[&str] = if mp3 {
         // ensure we get mp3 so it embeds on discord properly
-        Some(&["--extract-audio", "--audio-format", "mp3"])
+        &["--no-playlist", "--extract-audio", "--audio-format", "mp3"]
     } else {
-        None
+        &["--no-playlist"]
     };
 
     ctx.yt_dlp(
         url.as_str(),
         Some(output),
         download_format,
-        audio_only_args,
+        Some(args),
         &mut greet,
     )
     .await?;
