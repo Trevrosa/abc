@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use abc::DeleteWhenDone;
 use bytes::Bytes;
 use serenity::all::{
     ChannelType, CommandOptionType, Context, CreateCommand, CreateCommandOption, InteractionContext,
@@ -11,7 +12,7 @@ use tokio::{
 use tracing::{info, warn};
 
 use crate::{
-    utils::{context::CtxExt, ArgValue, Args, DeleteWhenDone},
+    utils::{context::CtxExt, ArgValue, Args},
     CLIENT,
 };
 use crate::{

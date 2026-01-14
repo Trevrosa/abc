@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use abc::Get;
 use serenity::all::{
     Attachment, Cache, ChannelId, ChannelType, Guild, GuildId, PartialMember, Permissions,
     ResolvedOption, Role, ThreadMetadata, User,
@@ -37,20 +38,6 @@ impl<'a> Args<'a> {
     /// Returns the first argument's value, or `None` if it is empty.
     pub fn first_value(&'a self) -> Option<&'a ArgValue<'a>> {
         self.0.first().map(|a| &a.value)
-    }
-}
-
-/// Like [`std::ops::Index`], but we don't have to return a `ref` of the `Output`.
-pub trait Get<Idx, Output> {
-    fn get(&self, index: Idx) -> Option<Output>;
-    fn get_or<Idx2>(&self, index: Idx, index2: Idx2) -> Option<Output>
-    where
-        Self: Get<Idx2, Output>,
-    {
-        let a = <Self as Get<Idx, Output>>::get(self, index);
-        let b = <Self as Get<Idx2, Output>>::get(self, index2);
-
-        a.or(b)
     }
 }
 

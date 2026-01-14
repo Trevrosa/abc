@@ -7,7 +7,7 @@ use super::{
     yt_dlp,
 };
 
-/// Only impl for Context
+// Only impl for Context
 pub trait CtxExt {
     /// Reply to the `replyer` with message `reply`.
     async fn reply(&self, reply: impl Into<CreateReply>, replyer: &Replyer) -> Message;
