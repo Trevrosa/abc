@@ -7,8 +7,8 @@ use serenity::all::{
 use serenity::async_trait;
 use tracing::{error, info, warn};
 
-use crate::commands::voice::{pause, play, resume, seek, set_loop, status, stop};
-use crate::commands::{cat, dog, edit_snipe, get_song, join, leave, snipe, test};
+use crate::commands::voice::{join, leave, pause, play, resume, seek, set_loop, status, stop};
+use crate::commands::{cat, dog, edit_snipe, get_song, snipe, test};
 use crate::handlers::command::handle_cmd;
 use crate::utils::context::CtxExt;
 use crate::utils::reply::Replyer;

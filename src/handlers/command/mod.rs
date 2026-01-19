@@ -21,15 +21,14 @@ pub(super) async fn handle_cmd(
         "cat" => commands::cat(ctx, replyer).await,
         "dog" => commands::dog(ctx, replyer).await,
 
-        "join" => commands::join(ctx, replyer, args).await,
-        "leave" => commands::leave(ctx, replyer).await,
-
         "snipe" => commands::snipe(ctx, replyer).await,
         "editsnipe" => commands::edit_snipe(ctx, replyer).await,
 
         "getsong" => commands::get_song(ctx, replyer, args).await,
 
         // voice commands
+        "join" => commands::voice::join(ctx, replyer, args).await,
+        "leave" => commands::voice::leave(ctx, replyer).await,
         "play" => commands::voice::play(ctx, replyer, args).await,
         "pause" => commands::voice::pause(ctx, replyer).await,
         "resume" | "unpause" => commands::voice::resume(ctx, replyer).await,

@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use tokio::sync::OnceCell;
 use tracing::{info, trace};
 
-use crate::CLIENT;
+use crate::{utils::ytmusic::Authentication, CLIENT};
 
 const SEARCH_API: &str = "https://music.youtube.com/youtubei/v1/search";
 const USER_AGENT: &str =
@@ -113,10 +113,9 @@ fn parse_visitor_id(resp: &str) -> anyhow::Result<String> {
 
 static VISITOR_ID: OnceCell<String> = OnceCell::const_new();
 
-/// Search youtube music by `query`, using access token `token`.
-pub async fn search<S: AsRef<str>>(query: S, token: S) -> anyhow::Result<Response> {
+/// Search youtube music by `query`, using authentication `auth`.
+pub async fn search(query: impl AsRef<str>, auth: impl Authentication) -> anyhow::Result<Response> {
     let query = query.as_ref();
-    let token = token.as_ref();
 
     // the json payload
     let mut body: Value = base_context();
@@ -156,7 +155,7 @@ pub async fn search<S: AsRef<str>>(query: S, token: S) -> anyhow::Result<Respons
     let resp = CLIENT
         .post(SEARCH_API)
         // https://github.com/sigma67/ytmusicapi//blob/14a575e1685c21474e03461cbcccc1bdff44b47e/ytmusicapi/ytmusic.py#L169
-        .bearer_auth(token)
+        .header("Authentication", auth.value())
         // https://github.com/sigma67/ytmusicapi//blob/fe95f5974efd7ba8b87ba030a1f528afe41a5a31/ytmusicapi/constants.py#L3
         .query(&[("alt", "json")])
         .json(&body)
@@ -164,8 +163,8 @@ pub async fn search<S: AsRef<str>>(query: S, token: S) -> anyhow::Result<Respons
         .header("Cookie", cookies)
         // https://github.com/sigma67/ytmusicapi//blob/14a575e1685c21474e03461cbcccc1bdff44b47e/ytmusicapi/ytmusic.py#L164
         .header("X-Goog-Visitor-Id", visitor_id)
-        // https://github.com/sigma67/ytmusicapi//blob/14a575e1685c21474e03461cbcccc1bdff44b47e/ytmusicapi/ytmusic.py#L180
-        .header("X-Goog-Request-Time", Utc::now().timestamp().to_string())
+        // // https://github.com/sigma67/ytmusicapi//blob/14a575e1685c21474e03461cbcccc1bdff44b47e/ytmusicapi/ytmusic.py#L180
+        // .header("X-Goog-Request-Time", Utc::now().timestamp().to_string())
         .send()
         .await?;
 

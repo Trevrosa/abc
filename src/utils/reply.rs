@@ -1,7 +1,7 @@
 //! Stolen mostly from [poise::reply](https://github.com/serenity-rs/poise/blob/518ff0564865bca2abf01ae8995b77340f439ef9/src/reply/mod.rs)
 
 use serenity::all::{
-    create_poll, CommandInteraction, Context, CreateActionRow, CreateAllowedMentions,
+    create_poll, ChannelId, CommandInteraction, Context, CreateActionRow, CreateAllowedMentions,
     CreateAttachment, CreateButton, CreateEmbed, CreateInteractionResponseFollowup, CreateMessage,
     CreatePoll, GuildId, Message, User,
 };
@@ -52,6 +52,14 @@ impl Replyer<'_> {
         match *self {
             Replyer::Prefix(msg) => &msg.author,
             Replyer::Slash(int) => &int.user,
+        }
+    }
+
+    /// Get the channel where we are replying to.
+    pub fn channel(&self) -> ChannelId {
+        match &self {
+            Replyer::Prefix(msg) => msg.channel_id,
+            Replyer::Slash(int) => int.channel_id,
         }
     }
 }

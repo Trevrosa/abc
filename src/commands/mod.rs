@@ -1,13 +1,7 @@
 pub mod voice;
 
-pub mod join;
-pub use join::join;
-
 pub mod test;
 pub use test::test;
-
-pub mod leave;
-pub use leave::leave;
 
 pub mod cat;
 pub use cat::cat;

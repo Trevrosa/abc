@@ -1,11 +1,11 @@
 pub mod access_token;
-pub use access_token::get_access_token;
 pub use access_token::AccessToken;
 pub use search::find_track_from_url;
+use tokio::fs;
 
 pub mod search;
 
-use std::time::Duration;
+use std::{path::Path, time::Duration};
 
 use serenity::{
     all::{
@@ -17,30 +17,15 @@ use serenity::{
 };
 use tracing::{info, warn};
 
-use crate::utils::context::CtxExt;
+use crate::utils::{
+    context::CtxExt,
+    ytmusic::browser::{self, Browser},
+};
 use crate::CLIENT;
 
 use super::reply::CreateReply;
 use super::reply::Replyer;
 use super::ytmusic::{self, search::parsing::SearchResult};
-
-async fn spotify_request_token_and_save(
-    data: Option<&mut Option<AccessToken>>,
-) -> Result<AccessToken, &'static str> {
-    info!("requesting new spotify access token");
-    let Some(access_token) = get_access_token(&CLIENT).await else {
-        return Err("could not get access token");
-    };
-
-    if let Some(data) = data {
-        data.replace(access_token.clone());
-        info!("saved new access token to cache");
-    } else {
-        warn!("failed to save new access token to cache");
-    }
-
-    Ok(access_token)
-}
 
 /// From a Spotify url, search on youtube music for an equivalent song.
 ///
@@ -89,53 +74,100 @@ pub async fn extract_spotify(
     )
     .await;
 
-    let stored = data.get::<ytmusic::AccessToken>().expect("");
+    // FIXME: using oauth does not work (https://github.com/sigma67/ytmusicapi/issues/813)
+    // let stored = data.get::<ytmusic::AccessToken>().expect("");
+    // #[allow(clippy::single_match_else)]
+    // let auth: ytmusic::AccessToken = match stored {
+    //     Some(token) => {
+    //         if token.expired() {
+    //             ctx.reply("cached token found, but expired. refreshing it..", replyer)
+    //                 .await;
+    //             info!("cached yt token expired, refreshing it");
+    //             let mut token = token.clone();
+    //             if let Err(err) = token.refresh().await {
+    //                 let log = format!("failed to refresh: {err:#?}");
+    //                 ctx.error_reply(log, replyer).await;
+    //                 return Err("");
+    //             }
+    //             data.insert::<ytmusic::AccessToken>(Some(token.clone()));
+    //             token
+    //         } else {
+    //             ctx.reply("using valid cached token", replyer).await;
+    //             info!("cached yt token not expired, using it");
+    //             token.clone()
+    //         }
+    //     }
+    //     None => {
+    //         let auth = ytmusic::oauth(ctx, replyer).await;
+    //         let Ok(token) = auth else {
+    //             let log = format!("failed to auth: {:#?}", auth.unwrap_err());
+    //             ctx.error_reply(log, replyer).await;
+    //             return Err("");
+    //         };
+    //         data.insert::<ytmusic::AccessToken>(Some(token.clone()));
+    //         token
+    //     }
+    // };
 
-    #[allow(clippy::single_match_else)]
-    let access_token: ytmusic::AccessToken = match stored {
-        Some(token) => {
-            if token.expired() {
-                ctx.reply("cached token found, but expired. refreshing it..", replyer)
-                    .await;
-                info!("cached yt token expired, refreshing it");
-                let mut token = token.clone();
-                if let Err(err) = token.refresh().await {
-                    let log = format!("failed to refresh: {err:#?}");
-                    ctx.error_reply(log, replyer).await;
-                    return Err("");
-                }
-                data.insert::<ytmusic::AccessToken>(Some(token.clone()));
-                token
+    // ctx.reply(
+    //     format!(
+    //         "authed! yt token was granted at <t:{}:t>, expires <t:{}:R>",
+    //         access_token.granted.timestamp(),
+    //         access_token.expires_at().timestamp()
+    //     ),
+    //     replyer,
+    // )
+    // .await;
+
+    let raw_cookie = if let Ok(cookie) = fs::read_to_string("./yt_browser").await {
+        cookie
+    } else {
+        ctx.reply("no saved ytm cookie, need input.\nplease go to https://music.youtube.com and copy your headers to a POST request.", replyer).await;
+
+        let msg = replyer
+            .channel()
+            .await_reply(&ctx.shard)
+            .timeout(Duration::from_mins(2))
+            .await
+            .ok_or("no response received, try again!")?;
+
+        let input = if msg.content.is_empty() {
+            let attachment = msg
+                .attachments
+                .first()
+                .ok_or("no message content and no attachment")?;
+
+            let is_text = Path::new(&attachment.filename)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("txt"));
+
+            if is_text && attachment.size < 500_000 {
+                String::from_utf8(
+                    attachment
+                        .download()
+                        .await
+                        .map_err(|_| "could not download text attachment")?,
+                )
+                .map_err(|_| "text attachment was not utf-8")?
             } else {
-                ctx.reply("using valid cached token", replyer).await;
-                info!("cached yt token not expired, using it");
-                token.clone()
+                return Err("attachment was not a text file, or was too large");
             }
-        }
-        None => {
-            let auth = ytmusic::oauth(ctx, replyer).await;
-            let Ok(token) = auth else {
-                let log = format!("failed to auth: {:#?}", auth.unwrap_err());
-                ctx.error_reply(log, replyer).await;
-                return Err("");
-            };
-            data.insert::<ytmusic::AccessToken>(Some(token.clone()));
-            token
-        }
-    };
+        } else {
+            msg.content
+        };
 
-    ctx.reply(
-        format!(
-            "authed! yt token was granted at <t:{}:t>, expires <t:{}:R>",
-            access_token.granted.timestamp(),
-            access_token.expires_at().timestamp()
-        ),
-        replyer,
-    )
-    .await;
+        if let Err(err) = fs::write("./yt_browser", &input).await {
+            warn!("failed to save yt cookie: {err}");
+        }
+
+        input
+    };
+    let cookie = browser::parse_cookie(&raw_cookie).ok_or("failed to parse cookie")?;
+
+    let auth = Browser::new(cookie);
 
     let query = format!("{} {}", spotify_track.name, spotify_artists.join(" "));
-    let searched = ytmusic::search(query.as_str(), access_token.as_ref()).await;
+    let searched = ytmusic::search(query.as_str(), auth).await;
     let Ok(searched) = searched else {
         let err = format!("```rs\n{:#?}```", searched.unwrap_err());
         ctx.reply(err, replyer).await;
@@ -286,4 +318,22 @@ pub async fn extract_spotify(
     ctx.reply(format!("chose <{url}>!"), replyer).await;
 
     Ok(url)
+}
+
+async fn spotify_request_token_and_save(
+    data: Option<&mut Option<AccessToken>>,
+) -> Result<AccessToken, &'static str> {
+    info!("requesting new spotify access token");
+    let Some(access_token) = AccessToken::get(&CLIENT).await else {
+        return Err("could not get access token");
+    };
+
+    if let Some(data) = data {
+        data.replace(access_token.clone());
+        info!("saved new access token to cache");
+    } else {
+        warn!("failed to save new access token to cache");
+    }
+
+    Ok(access_token)
 }

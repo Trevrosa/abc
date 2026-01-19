@@ -5,7 +5,7 @@ pub use command::slash::SlashCommands;
 mod sniper;
 pub use sniper::Sniper;
 
-mod voice;
+// mod voice;
 // pub use voice::VoiceHandler;
 
 mod client;

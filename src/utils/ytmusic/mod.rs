@@ -1,8 +1,7 @@
 pub mod auth;
-pub use auth::oauth;
-
-pub mod access_token;
-pub use access_token::AccessToken;
+pub use auth::browser;
+pub use auth::oauth::AccessToken;
+pub use auth::Authentication; //, oauth};
 
 pub mod search;
 pub use search::parsing::parse_results;

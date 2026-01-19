@@ -17,7 +17,8 @@ use serenity::{all::Settings, prelude::*};
 use serenity_ctrlc::Disconnector;
 use songbird::{tracks::TrackHandle, SerenityInit};
 
-use tracing::{error, info, warn};
+use tracing::{error, info, warn, Level};
+use tracing_subscriber::EnvFilter;
 use utils::sniping::{MostRecentDeletedMessage, MostRecentEditedMessage};
 use utils::spotify;
 use utils::ytmusic::{self, AccessToken};
@@ -45,35 +46,20 @@ pub const OWNER: u64 = 758926553454870529;
 
 const YT_TOKEN_PATH: &str = "yt_token";
 
-// serialize some saved state to disk, then disconnect all shards
-async fn end_handler(disconnector: Option<Disconnector>) {
-    if let Some(disconnector) = disconnector {
-        if let Ok(global) = disconnector.data.try_read() {
-            if let Some(yt_token) = global.get::<AccessToken>().unwrap() {
-                let yt_token = serde::encode_to_vec(yt_token, config::standard()).unwrap();
-                fs::write(YT_TOKEN_PATH, yt_token).unwrap();
-            }
-
-            info!("saved yt token");
-        } else {
-            error!("failed to read from global data, can't save");
-        }
-
-        disconnector.disconnect().await;
-    }
-}
-
 pub static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // tracing_subscriber::fmt()
-    //     .with_max_level(tracing::level_filters::LevelFilter::DEBUG)
-    //     .without_time()
-    //     .init();
     assert!(Path::new("/usr/bin/yt-dlp").exists());
 
-    tracing_subscriber::fmt().without_time().init();
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::builder()
+                .with_default_directive(Level::INFO.into())
+                .from_env_lossy(),
+        )
+        .without_time()
+        .init();
 
     let token: &str = include_str!("../token");
     let intents: GatewayIntents = GatewayIntents::all();
@@ -117,4 +103,22 @@ async fn main() -> Result<()> {
     client.start().await?;
 
     Ok(())
+}
+
+// serialize some saved state to disk, then disconnect all shards
+async fn end_handler(disconnector: Option<Disconnector>) {
+    if let Some(disconnector) = disconnector {
+        if let Ok(global) = disconnector.data.try_read() {
+            if let Some(yt_token) = global.get::<AccessToken>().unwrap() {
+                let yt_token = serde::encode_to_vec(yt_token, config::standard()).unwrap();
+                fs::write(YT_TOKEN_PATH, yt_token).unwrap();
+            }
+
+            info!("saved yt token");
+        } else {
+            error!("failed to read from global data, can't save");
+        }
+
+        disconnector.disconnect().await;
+    }
 }

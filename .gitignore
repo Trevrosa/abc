@@ -9,4 +9,5 @@ spotify_clientid
 yt_secret
 yt_clientid
 yt_token
+yt_browser
 .env
