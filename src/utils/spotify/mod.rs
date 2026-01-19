@@ -249,7 +249,7 @@ pub async fn extract_spotify(
 
     let mut interactions = paginated
         .await_component_interaction(&ctx.shard)
-        .timeout(Duration::from_secs(10 * 60))
+        .timeout(Duration::from_mins(10))
         .stream();
 
     let mut choice = None;
@@ -299,6 +299,10 @@ pub async fn extract_spotify(
                 break;
             }
             "cancel" => {
+                interaction
+                    .create_response(&ctx, Acknowledge)
+                    .await
+                    .unwrap();
                 return Err("ok, cancelled");
             }
             id => {
