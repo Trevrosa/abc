@@ -4,8 +4,8 @@ use serde::Deserialize;
 use serenity::all::{Context, CreateCommand};
 
 use crate::{
-    utils::{context::CtxExt, embed_message, reply::Replyer},
     CLIENT,
+    utils::{context::CtxExt, embed_message, reply::Replyer},
 };
 
 #[allow(unused)]

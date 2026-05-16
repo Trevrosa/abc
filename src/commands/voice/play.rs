@@ -8,10 +8,11 @@ use serenity::all::{
 use tokio::fs::remove_file;
 use tracing::{info, warn};
 
+use crate::Volume;
 use crate::utils::{reply::Replyer, spotify::extract_spotify};
 use crate::{
-    utils::{context::CtxExt, ArgValue, Args},
     CLIENT,
+    utils::{ArgValue, Args, context::CtxExt},
 };
 
 // TODO: queuing
@@ -138,7 +139,16 @@ pub async fn play(
             }
         }
 
-        handler.enqueue(input.into()).await;
+        let track = handler.enqueue(input.into()).await;
+
+        {
+            if let Ok(data) = ctx.data.try_read()
+                && let Some(volumes) = data.get::<Volume>()
+                && let Some(volume) = volumes.get(&guild_id)
+            {
+                track.set_volume(*volume).unwrap();
+            }
+        }
 
         let queue_len = handler.queue().len();
         drop(handler);
@@ -148,7 +158,7 @@ pub async fn play(
         } else {
             let queued = queue_len - 1;
             let plural = if queued > 1 { "s" } else { "" };
-            &format!("added to queue ({queued} song{plural} till urs)",)
+            &format!("added to queue ({queued} song{plural} till urs)")
         };
 
         if is_spotify {

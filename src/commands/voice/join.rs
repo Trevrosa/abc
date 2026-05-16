@@ -2,7 +2,7 @@ use serenity::all::{
     ChannelType, CommandOptionType, Context, CreateCommand, CreateCommandOption, InteractionContext,
 };
 
-use crate::utils::{context::CtxExt, reply::Replyer, ArgValue, Args};
+use crate::utils::{ArgValue, Args, context::CtxExt, reply::Replyer};
 
 pub async fn join(
     ctx: &Context,

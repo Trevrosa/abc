@@ -14,11 +14,14 @@ use std::{collections::HashMap, sync::LazyLock};
 use anyhow::Result;
 use bincode::{config, serde};
 use rustls::crypto::{self, CryptoProvider};
-use serenity::{all::Settings, prelude::*};
+use serenity::{
+    all::{GuildId, Settings},
+    prelude::*,
+};
 use serenity_ctrlc::Disconnector;
 use songbird::SerenityInit;
 
-use tracing::{error, info, warn, Level};
+use tracing::{Level, error, info, warn};
 use tracing_subscriber::EnvFilter;
 use utils::sniping::{MostRecentDeletedMessage, MostRecentEditedMessage};
 use utils::spotify;
@@ -40,6 +43,12 @@ pub const SEVEN: u64 = 674143957755756545;
 pub const OWNER: u64 = 758926553454870529;
 
 const YT_TOKEN_PATH: &str = "yt_token";
+
+struct Volume;
+
+impl TypeMapKey for Volume {
+    type Value = HashMap<GuildId, f32>;
+}
 
 pub static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
@@ -91,6 +100,7 @@ async fn main() -> Result<()> {
         .type_map_insert::<MostRecentEditedMessage>(HashMap::new())
         .type_map_insert::<spotify::AccessToken>(None)
         .type_map_insert::<ytmusic::AccessToken>(access_token)
+        .type_map_insert::<Volume>(HashMap::new())
         .cache_settings(cache_settings)
         .register_songbird()
         .await?;

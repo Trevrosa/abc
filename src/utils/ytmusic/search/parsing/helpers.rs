@@ -8,8 +8,8 @@ use serde_json::Value;
 use tracing::{trace, warn};
 
 use super::{
-    consts::{MRLIR, NAVIGATION_BROWSE_ID, NAVIGATION_VIDEO_TYPE, PLAY_BUTTON, SUBTITLE},
     SearchResultType,
+    consts::{MRLIR, NAVIGATION_BROWSE_ID, NAVIGATION_VIDEO_TYPE, PLAY_BUTTON, SUBTITLE},
 };
 
 use super::consts::{MENU_PLAYLIST_ID, TITLE_TEXT, WATCH_PID, WATCH_VIDEO_ID};

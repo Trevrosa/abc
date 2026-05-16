@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use base64::{engine::GeneralPurpose, Engine};
+use base64::{Engine, engine::GeneralPurpose};
 use reqwest::Client;
 use serde::Deserialize;
 use serenity::prelude::TypeMapKey;

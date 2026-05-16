@@ -17,11 +17,11 @@ use serenity::{
 };
 use tracing::{info, warn};
 
+use crate::CLIENT;
 use crate::utils::{
     context::CtxExt,
     ytmusic::browser::{self, Browser},
 };
-use crate::CLIENT;
 
 use super::reply::CreateReply;
 use super::reply::Replyer;

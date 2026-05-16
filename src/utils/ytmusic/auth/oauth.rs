@@ -11,8 +11,8 @@ use tracing::info;
 use std::fmt::Display;
 
 use crate::{
-    utils::{context::CtxExt, reply::Replyer, ytmusic::Authentication},
     CLIENT,
+    utils::{context::CtxExt, reply::Replyer, ytmusic::Authentication},
 };
 
 const CLIENT_ID: &str = include_str!("../../../../yt_clientid");

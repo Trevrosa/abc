@@ -5,12 +5,12 @@ use std::time::Instant;
 use anyhow::anyhow;
 use chrono::{Datelike, Utc};
 use regex::Regex;
-use reqwest::{header::HeaderMap, Response};
-use serde_json::{json, Value};
+use reqwest::{Response, header::HeaderMap};
+use serde_json::{Value, json};
 use tokio::sync::OnceCell;
 use tracing::{info, trace};
 
-use crate::{utils::ytmusic::Authentication, CLIENT};
+use crate::{CLIENT, utils::ytmusic::Authentication};
 
 const SEARCH_API: &str = "https://music.youtube.com/youtubei/v1/search";
 const USER_AGENT: &str =

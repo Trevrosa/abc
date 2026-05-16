@@ -5,7 +5,7 @@ use serenity::all::Context;
 
 use crate::{
     commands,
-    utils::{reply::Replyer, Args},
+    utils::{Args, reply::Replyer},
 };
 
 #[inline]
@@ -30,9 +30,11 @@ pub(super) async fn handle_cmd(
         "join" => commands::voice::join(ctx, replyer, args).await,
         "leave" => commands::voice::leave(ctx, replyer).await,
         "play" => commands::voice::play(ctx, replyer, args).await,
+        "dequeue" => commands::voice::dequeue(ctx, replyer, args).await,
         "pause" => commands::voice::pause(ctx, replyer).await,
         "resume" | "unpause" => commands::voice::resume(ctx, replyer).await,
         "status" => commands::voice::status(ctx, replyer).await,
+        "volume" => commands::voice::set_volume(ctx, replyer, args).await,
         "loop" => commands::voice::set_loop(ctx, replyer).await,
         "stop" | "skip" => commands::voice::stop(ctx, replyer).await,
         "seek" => commands::voice::seek(ctx, replyer, args).await,

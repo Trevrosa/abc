@@ -3,7 +3,7 @@ use tokio::{
     io::{AsyncBufReadExt, BufReader},
     process::Child,
 };
-use tokio_stream::{wrappers::LinesStream, StreamExt};
+use tokio_stream::{StreamExt, wrappers::LinesStream};
 
 use super::context::CtxExt;
 

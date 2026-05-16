@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use crate::{
-    utils::{context::CtxExt, embed_message, Replyer},
     CLIENT,
+    utils::{Replyer, context::CtxExt, embed_message},
 };
 use serenity::all::{Context, CreateCommand};
 
