@@ -74,6 +74,20 @@ pub async fn extract_spotify(
     )
     .await;
 
+    search(
+        ctx,
+        replyer,
+        format!("{} {}", spotify_track.name, spotify_artists.join(" ")),
+    )
+    .await
+}
+
+/// search on yt music for a song with `query`, prompt the user to get their choice.
+pub async fn search(
+    ctx: &Context,
+    replyer: &Replyer<'_>,
+    query: impl AsRef<str>,
+) -> Result<String, &'static str> {
     // FIXME: using oauth does not work (https://github.com/sigma67/ytmusicapi/issues/813)
     // let stored = data.get::<ytmusic::AccessToken>().expect("");
     // #[allow(clippy::single_match_else)]
@@ -166,8 +180,7 @@ pub async fn extract_spotify(
 
     let auth = Browser::new(cookie);
 
-    let query = format!("{} {}", spotify_track.name, spotify_artists.join(" "));
-    let searched = ytmusic::search(query.as_str(), auth).await;
+    let searched = ytmusic::search(query.as_ref(), auth).await;
     let Ok(searched) = searched else {
         let err = format!("```rs\n{:#?}```", searched.unwrap_err());
         ctx.reply(err, replyer).await;

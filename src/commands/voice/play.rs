@@ -2,6 +2,7 @@ use std::path::Path;
 
 use abc::DeleteWhenDone;
 use bytes::Bytes;
+use reqwest::Url;
 use serenity::all::{
     ChannelType, CommandOptionType, Context, CreateCommand, CreateCommandOption, InteractionContext,
 };
@@ -9,6 +10,7 @@ use tokio::fs::remove_file;
 use tracing::{info, warn};
 
 use crate::Volume;
+use crate::utils::spotify::search;
 use crate::utils::{reply::Replyer, spotify::extract_spotify};
 use crate::{
     CLIENT,
@@ -43,21 +45,20 @@ pub async fn play(
     let _cleanup = DeleteWhenDone::new(track_path);
 
     let mut is_spotify = false;
-    let input: Bytes = if let Some(ArgValue::String(url)) = args.first_value() {
+    let input: Bytes = if let Some(ArgValue::String(input)) = args.first_value() {
         if Path::new(&track_path).exists() {
             remove_file(&track_path).await.unwrap();
         }
 
-        let url = if url.contains("spotify.com") {
-            ctx.reply(
-                "this is a spotify url, we need to do some stuff first.",
-                replyer,
-            )
-            .await;
-            is_spotify = true;
-            extract_spotify(ctx, replyer, url).await?
+        let url = if Url::parse(input).is_ok() {
+            if input.contains("spotify.com") {
+                is_spotify = true;
+                extract_spotify(ctx, replyer, input).await?
+            } else {
+                input.to_string()
+            }
         } else {
-            url.to_string()
+            search(ctx, replyer, input).await?
         };
 
         let mut greet = ctx.reply("now im downloading..", replyer).await;
@@ -186,7 +187,7 @@ pub fn register() -> CreateCommand {
         ))
         .add_option(CreateCommandOption::new(
             CommandOptionType::String,
-            "songurl",
-            "the url of the song to play",
+            "song",
+            "the url of the song to play, or a query to search yt with",
         ))
 }

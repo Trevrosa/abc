@@ -28,7 +28,7 @@ pub async fn set_volume(
 
     if let Some(track) = ctx.current_track(guild_id).await {
         track.set_volume(volume).unwrap();
-    };
+    }
 
     {
         let mut data = ctx.data.write().await;
