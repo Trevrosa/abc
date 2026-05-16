@@ -63,7 +63,7 @@ impl EventHandler for SlashCommands {
     }
 
     async fn ready(&self, ctx: Context, _: Ready) {
-        let commands = vec![
+        let mut commands = vec![
             test::register(),
             play::register(),
             snipe::register(),
@@ -73,13 +73,15 @@ impl EventHandler for SlashCommands {
             edit_snipe::register(),
             cat::register(),
             dog::register(),
-            stop::register(),
             status::register(),
             set_loop::register(),
             seek::register(),
-            resume::register(),
             pause::register(),
         ];
+
+        // commands with aliases
+        commands.extend(stop::register());
+        commands.extend(resume::register());
 
         let testing_guild = GuildId::new(TESTING_GUILD);
         if cfg!(debug_assertions) {

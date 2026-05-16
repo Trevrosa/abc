@@ -23,7 +23,7 @@ pub async fn dog(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static st
     };
 
     let resp = resp.json::<Vec<Image>>().await.unwrap();
-    let new_msg = embed_message("dog :o", &resp[0].url, None);
+    let new_msg = embed_message("dog", &resp[0].url, None);
 
     ctx.reply(new_msg, replyer).await;
 

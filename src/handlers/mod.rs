@@ -6,7 +6,7 @@ mod sniper;
 pub use sniper::Sniper;
 
 // mod voice;
-// pub use voice::VoiceHandler;
+// pub use voice::Player;
 
 mod client;
 pub use client::Client;

@@ -30,25 +30,15 @@ pub async fn find_track_from_url<S: AsRef<str>>(
     let url = url.into_url()?;
 
     // check if url is spotify track url
-    if url.domain().is_none_or(|d| d != "spotify.com") && !url.as_str().contains("track") {
-        return Err(anyhow!("{url} is not a spotify track url"));
+    if url.domain().is_none_or(|d| !d.ends_with("spotify.com")) {
+        return Err(anyhow!("{url} is not a spotify url"));
     }
 
-    let track_id = if let Some(query_string) = url.query() {
-        url.path_segments()
-            .iter_mut()
-            .find_map(|p| p.next_back().map(|p| p.replace(query_string, "")))
-    } else {
-        url.path_segments()
-            .iter_mut()
-            .find_map(|p| p.next_back().map(str::to_string))
-    };
-
-    let Some(track_id) = track_id else {
+    let Some(track_id) = url.path().split('/').nth(2) else {
         return Err(anyhow!("could not parse track id from url"));
     };
 
-    find_track(track_id.as_ref(), access_token.as_ref()).await
+    find_track(track_id, access_token.as_ref()).await
 }
 
 // we can search youtube music by isrc by just using it as query.

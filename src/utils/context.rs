@@ -1,6 +1,7 @@
 use std::{collections::hash_map::Iter, path::Path};
 
-use serenity::all::{ChannelId, ChannelType, Context, GuildChannel, Message, User};
+use serenity::all::{ChannelId, ChannelType, Context, GuildChannel, GuildId, Message, User};
+use songbird::tracks::TrackHandle;
 
 use super::{
     reply::{CreateReply, Replyer},
@@ -11,8 +12,8 @@ use super::{
 pub trait CtxExt {
     /// Reply to the `replyer` with message `reply`.
     async fn reply(&self, reply: impl Into<CreateReply>, replyer: &Replyer) -> Message;
-    /// Reply t
-    async fn error_reply(&self, content: impl Into<String>, message: &Replyer) -> Message;
+    /// Reply to the `replyer` with message `content`, also logging to the console an error event with `content`.
+    async fn error_reply(&self, content: impl Into<String>, replyer: &Replyer) -> Message;
     /// Edit message `msg` to new content `content`.
     async fn edit_msg(&self, content: impl Into<String>, msg: &mut Message);
     /// Add a new line `line` to `msg`.
@@ -33,6 +34,7 @@ pub trait CtxExt {
         extra_args: Option<&[&str]>,
         status_msg: &mut Message,
     ) -> Result<(), &'static str>;
+    async fn current_track(&self, guild_id: GuildId) -> Option<TrackHandle>;
 }
 
 impl CtxExt for Context {
@@ -40,8 +42,8 @@ impl CtxExt for Context {
         super::internal::reply(self, reply, replyer).await
     }
 
-    async fn error_reply(&self, content: impl Into<String>, msg: &Replyer<'_>) -> Message {
-        super::internal::error_reply(self, content, msg).await
+    async fn error_reply(&self, content: impl Into<String>, replyer: &Replyer<'_>) -> Message {
+        super::internal::error_reply(self, content, replyer).await
     }
 
     async fn edit_msg(&self, content: impl Into<String>, msg: &mut Message) {
@@ -70,5 +72,18 @@ impl CtxExt for Context {
         status_msg: &mut Message,
     ) -> Result<(), &'static str> {
         yt_dlp::download(self, url, output, download_format, extra_args, status_msg).await
+    }
+
+    async fn current_track(&self, guild_id: GuildId) -> Option<TrackHandle> {
+        let manager = songbird::get(self).await.unwrap();
+
+        if let Some(handler) = manager.get(guild_id) {
+            let handler = handler.lock().await;
+            let queue = handler.queue();
+
+            queue.current()
+        } else {
+            None
+        }
     }
 }

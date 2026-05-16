@@ -5,19 +5,13 @@ use bytes::Bytes;
 use serenity::all::{
     ChannelType, CommandOptionType, Context, CreateCommand, CreateCommandOption, InteractionContext,
 };
-use tokio::{
-    fs::{remove_file, File},
-    io::AsyncReadExt,
-};
+use tokio::fs::remove_file;
 use tracing::{info, warn};
 
+use crate::utils::{reply::Replyer, spotify::extract_spotify};
 use crate::{
     utils::{context::CtxExt, ArgValue, Args},
     CLIENT,
-};
-use crate::{
-    utils::{reply::Replyer, spotify::extract_spotify},
-    TrackHandleKey,
 };
 
 // TODO: queuing
@@ -62,7 +56,7 @@ pub async fn play(
             is_spotify = true;
             extract_spotify(ctx, replyer, url).await?
         } else {
-            (*url).to_string()
+            url.to_string()
         };
 
         let mut greet = ctx.reply("now im downloading..", replyer).await;
@@ -70,17 +64,10 @@ pub async fn play(
         ctx.yt_dlp(url.as_str(), Some(&track_path), "ba*", None, &mut greet)
             .await?;
 
-        let mut bytes = Vec::new();
-        if File::open(&track_path)
-            .await
-            .unwrap()
-            .read_to_end(&mut bytes)
-            .await
-            .is_err()
-        {
+        let Ok(bytes) = tokio::fs::read(&track_path).await else {
             ctx.edit_msg("faild to read file", &mut greet).await;
             return Err("");
-        }
+        };
 
         bytes.into()
     } else if let Some(ArgValue::Attachment(attachment)) = args.first_value() {
@@ -119,10 +106,7 @@ pub async fn play(
     };
 
     let mut channels = channels.iter();
-    let user = match replyer {
-        Replyer::Prefix(msg) => &msg.author,
-        Replyer::Slash(int) => &int.user,
-    };
+    let user = replyer.user();
 
     // join vc if bot has never joined a vc
     if manager.get(guild_id).is_none() {
@@ -154,14 +138,23 @@ pub async fn play(
             }
         }
 
-        let track = handler.play_only_input(input.into());
+        handler.enqueue(input.into()).await;
+
+        let queue_len = handler.queue().len();
         drop(handler);
 
-        ctx.data.write().await.insert::<TrackHandleKey>(track);
-        if is_spotify {
-            ctx.reply("playing for u!", replyer).await;
+        let msg = if queue_len == 1 {
+            "playing for u!"
         } else {
-            ctx.edit_msg("playing for u!", &mut greet).await;
+            let queued = queue_len - 1;
+            let plural = if queued > 1 { "s" } else { "" };
+            &format!("added to queue ({queued} song{plural} till urs)",)
+        };
+
+        if is_spotify {
+            ctx.reply(msg, replyer).await;
+        } else {
+            ctx.edit_msg(msg, &mut greet).await;
         }
     } else if is_spotify {
         ctx.reply("faild to get voice handler", replyer).await;

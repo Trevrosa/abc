@@ -7,7 +7,6 @@ use serenity::all::{
 use crate::utils::context::CtxExt;
 use crate::utils::reply::Replyer;
 use crate::utils::{ArgValue, Args};
-use crate::TrackHandleKey;
 
 pub async fn seek(
     ctx: &Context,
@@ -22,24 +21,21 @@ pub async fn seek(
         return Err("not number");
     };
 
-    let data = ctx.data.try_read().unwrap();
+    let Some(guild_id) = replyer.guild() else {
+        return Err("u not in a guild");
+    };
 
-    if data.contains_key::<TrackHandleKey>() {
-        let Some(track) = data.get::<TrackHandleKey>() else {
-            return Err("song ended..");
-        };
+    let Some(track) = ctx.current_track(guild_id).await else {
+        return Err("im not play anything");
+    };
 
-        #[allow(clippy::cast_sign_loss)]
-        let seek = track.seek_async(Duration::from_secs(*to_seek as u64)).await;
-        drop(data);
+    #[allow(clippy::cast_sign_loss)]
+    let seek = track.seek_async(Duration::from_secs(*to_seek as u64)).await;
 
-        if seek.is_ok() {
-            ctx.reply(format!("seekd to {to_seek} secs"), replyer).await;
-        } else {
-            ctx.reply("faild to seek", replyer).await;
-        }
+    if seek.is_ok() {
+        ctx.reply(format!("seekd to {to_seek} secs"), replyer).await;
     } else {
-        ctx.reply("im not play anything", replyer).await;
+        ctx.reply("faild to seek", replyer).await;
     }
 
     Ok(())

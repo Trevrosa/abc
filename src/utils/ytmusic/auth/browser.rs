@@ -17,7 +17,7 @@ impl Browser {
         let hash = Sha1::digest(format!("{timestamp} {sapisid} https://music.youtube.com"));
 
         Self {
-            auth: format!("SAPISIDHASH {timestamp}_{hash:x}"),
+            auth: format!("SAPISIDHASH {timestamp}_{}", hex::encode(hash)),
         }
     }
 }

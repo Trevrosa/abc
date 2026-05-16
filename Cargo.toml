@@ -4,29 +4,32 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.100"
+anyhow = "1.0.102"
 base64 = "0.22.1"
 # TODO: switch to alternative, bincode unmaintained
 bincode = { version = "2.0.1", features = ["serde"] }
-bytes = "1.11.0"
-chrono = { version = "0.4.43", features = ["serde"] }
-ctrlc = { version = "3.5.1", features = ["termination"] }
-regex = "1.12.2"
-reqwest = { version = "0.13.1", features = ["gzip", "json", "form", "query"] }
+bytes = "1.11.1"
+chrono = { version = "0.4.44", features = ["serde"] }
+ctrlc = { version = "3.5.2", features = ["termination"] }
+hex = "0.4.3"
+regex = "1.12.3"
+reqwest = { version = "0.13.3", features = ["gzip", "json", "form", "query"] }
+rustls = "0.23.40"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serenity = { version = "0.12.5", features = ["client", "voice", "cache", "collector"] }
-sha1 = { version = "0.10.6", features = ["asm"] }
-songbird = { version = "0.5.0", features = ["driver", "receive"] }
+sha1 = "0.11.0"
+songbird = { version = "0.6.0", features = ["builtin-queue", "driver", "receive"] }
+# TODO: update to 0.6 once its fixed
 symphonia = { version = "0.5.5", features = ["all", "opt-simd"] }
 thiserror = "2.0.18"
-tokio = { version = "1.49.0", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros"] }
 tokio-stream = { version = "0.1.18", features = ["io-util"] }
 tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [target.'cfg(target_env = "msvc")'.dependencies]
-mimalloc = "0.1.48"
+mimalloc = "0.1.50"
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 tikv-jemallocator = "0.6.1"

@@ -2,29 +2,30 @@ use serenity::all::{Context, CreateCommand, InteractionContext};
 
 use crate::utils::context::CtxExt;
 use crate::utils::reply::Replyer;
-use crate::TrackHandleKey;
 
 pub async fn stop(ctx: &Context, replyer: &Replyer<'_>) -> Result<(), &'static str> {
-    let data = ctx.data.try_read().unwrap();
-    if data.contains_key::<TrackHandleKey>() {
-        let Some(track) = data.get::<TrackHandleKey>().cloned() else {
-            return Err("faild to stop");
-        };
+    let Some(guild_id) = replyer.guild() else {
+        return Err("u not in a guild");
+    };
 
-        track.stop().unwrap();
-        drop(data); // unlock the typemap
+    let Some(track) = ctx.current_track(guild_id).await else {
+        return Err("im not play anything");
+    };
 
-        ctx.data.write().await.remove::<TrackHandleKey>();
-        ctx.reply("stopd", replyer).await;
-    } else {
-        ctx.reply("im not play anything", replyer).await;
-    }
+    track.stop().unwrap();
+
+    ctx.reply("stopd", replyer).await;
 
     Ok(())
 }
 
-pub fn register() -> CreateCommand {
-    CreateCommand::new("stop")
+pub fn register() -> [CreateCommand; 2] {
+    let stop = CreateCommand::new("stop")
         .add_context(InteractionContext::Guild)
-        .description("stop bot playback")
+        .description("stop bot playback");
+    let skip = CreateCommand::new("skip")
+        .add_context(InteractionContext::Guild)
+        .description("skip the current song");
+
+    [stop, skip]
 }

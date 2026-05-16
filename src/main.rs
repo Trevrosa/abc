@@ -13,21 +13,16 @@ use std::{collections::HashMap, sync::LazyLock};
 
 use anyhow::Result;
 use bincode::{config, serde};
+use rustls::crypto::{self, CryptoProvider};
 use serenity::{all::Settings, prelude::*};
 use serenity_ctrlc::Disconnector;
-use songbird::{tracks::TrackHandle, SerenityInit};
+use songbird::SerenityInit;
 
 use tracing::{error, info, warn, Level};
 use tracing_subscriber::EnvFilter;
 use utils::sniping::{MostRecentDeletedMessage, MostRecentEditedMessage};
 use utils::spotify;
 use utils::ytmusic::{self, AccessToken};
-
-pub struct TrackHandleKey;
-
-impl TypeMapKey for TrackHandleKey {
-    type Value = TrackHandle;
-}
 
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]
@@ -84,6 +79,8 @@ async fn main() -> Result<()> {
             }
         },
     );
+
+    CryptoProvider::install_default(crypto::aws_lc_rs::default_provider()).unwrap();
 
     let mut client: Client = Client::builder(token, intents)
         .event_handler(handlers::Client)

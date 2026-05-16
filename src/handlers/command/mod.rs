@@ -34,7 +34,7 @@ pub(super) async fn handle_cmd(
         "resume" | "unpause" => commands::voice::resume(ctx, replyer).await,
         "status" => commands::voice::status(ctx, replyer).await,
         "loop" => commands::voice::set_loop(ctx, replyer).await,
-        "stop" => commands::voice::stop(ctx, replyer).await,
+        "stop" | "skip" => commands::voice::stop(ctx, replyer).await,
         "seek" => commands::voice::seek(ctx, replyer, args).await,
 
         // do nothing if not matched
