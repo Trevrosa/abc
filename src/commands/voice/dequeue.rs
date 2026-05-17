@@ -21,16 +21,19 @@ pub async fn dequeue(
         return Err("cant dequeue the track im playing now, use /skip");
     }
 
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    let index = *index as usize;
+
     let manager = songbird::get(ctx).await.unwrap();
 
     if let Some(handler) = manager.get(guild_id) {
         let handler = handler.lock().await;
         let queue = handler.queue();
 
-        if *index as usize - 1 > queue.len() {
+        if index - 1 > queue.len() {
             return Err("that track no exist in queue ...");
         }
-        queue.dequeue(*index as usize - 1).unwrap();
+        queue.dequeue(index - 1).unwrap();
     } else {
         return Err("im not play anything");
     }

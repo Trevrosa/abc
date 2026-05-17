@@ -24,6 +24,7 @@ pub async fn set_volume(
         return Err("volume cant be negative");
     }
 
+    #[allow(clippy::cast_precision_loss)]
     let volume = *volume as f32 / 100.0;
 
     if let Some(track) = ctx.current_track(guild_id).await {
