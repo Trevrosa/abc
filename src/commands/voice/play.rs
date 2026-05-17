@@ -58,7 +58,7 @@ pub async fn play(
                 input.to_string()
             }
         } else {
-            search(ctx, replyer, input).await?
+            search(ctx, replyer, args.full_string()).await?
         };
 
         let mut greet = ctx.reply("now im downloading..", replyer).await;

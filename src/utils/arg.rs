@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{borrow::Cow, fmt::Debug};
 
 use abc::Get;
 use serenity::all::{
@@ -38,6 +38,36 @@ impl<'a> Args<'a> {
     /// Returns the first argument's value, or `None` if it is empty.
     pub fn first_value(&'a self) -> Option<&'a ArgValue<'a>> {
         self.0.first().map(|a| &a.value)
+    }
+
+    /// Combine all the [`ArgValue::String`] args, useful since each word is a separate arg for commands run by prefix.
+    pub fn full_string(&'a self) -> Cow<'a, str> {
+        if self.0.len() == 1
+            && let ArgValue::String(str) = self.0[0].value
+        {
+            return Cow::Borrowed(str);
+        }
+
+        let mut output = String::new();
+        self.0
+            .iter()
+            .filter_map(|arg| {
+                if let ArgValue::String(str) = arg.value {
+                    Some(str)
+                } else {
+                    None
+                }
+            })
+            .enumerate()
+            .fold(&mut output, |acc, (i, word)| {
+                if i > 0 {
+                    acc.push(' ');
+                }
+                acc.push_str(word);
+                acc
+            });
+
+        Cow::Owned(output)
     }
 }
 
