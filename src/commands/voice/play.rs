@@ -50,11 +50,13 @@ pub async fn play(
             remove_file(&track_path).await.unwrap();
         }
 
+        let mut format = Some("ba");
         let url = if Url::parse(input).is_ok() {
             if input.contains("spotify.com") {
                 is_spotify = true;
                 extract_spotify(ctx, replyer, input).await?
             } else {
+                format = None;
                 input.to_string()
             }
         } else {
@@ -63,7 +65,7 @@ pub async fn play(
 
         let mut greet = ctx.reply("now im downloading..", replyer).await;
 
-        ctx.yt_dlp(url.as_str(), Some(&track_path), "ba", None, &mut greet)
+        ctx.yt_dlp(url.as_str(), Some(&track_path), format, None, &mut greet)
             .await?;
 
         let Ok(bytes) = tokio::fs::read(&track_path).await else {

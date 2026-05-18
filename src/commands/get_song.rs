@@ -87,7 +87,7 @@ pub async fn get_song(
     ctx.yt_dlp(
         url.as_str(),
         Some(output),
-        download_format,
+        Some(download_format),
         Some(args),
         &mut greet,
     )

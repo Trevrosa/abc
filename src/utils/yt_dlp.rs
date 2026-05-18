@@ -15,7 +15,7 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
     ctx: &Context,
     url: S,
     output: Option<P>,
-    download_format: S,
+    download_format: Option<S>,
     extra_args: Option<&[&str]>,
     status_msg: &mut Message,
 ) -> Result<(), &'static str> {
@@ -23,9 +23,12 @@ pub(super) async fn download<P: AsRef<Path>, S: AsRef<str>>(
     let output = output.map_or(PathBuf::from(DEFAULT_OUTPUT_TEMPLATE), |p| {
         p.as_ref().to_owned()
     });
-    let download_format = download_format.as_ref();
+    let output = &output.to_string_lossy();
 
-    let args = [url, "-o", &output.to_string_lossy(), "-f", download_format];
+    let mut args = vec![url, "-o", output];
+    if let Some(format) = download_format.as_ref() {
+        args.extend(["-f", format.as_ref()]);
+    }
     let extra_args = extra_args.unwrap_or(&[]);
 
     let downloader = Command::new("/usr/bin/yt-dlp")

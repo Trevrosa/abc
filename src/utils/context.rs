@@ -30,7 +30,7 @@ pub trait CtxExt {
         &self,
         url: S,
         output: Option<P>,
-        download_format: S,
+        download_format: Option<S>,
         extra_args: Option<&[&str]>,
         status_msg: &mut Message,
     ) -> Result<(), &'static str>;
@@ -67,7 +67,7 @@ impl CtxExt for Context {
         &self,
         url: S,
         output: Option<P>,
-        download_format: S,
+        download_format: Option<S>,
         extra_args: Option<&[&str]>,
         status_msg: &mut Message,
     ) -> Result<(), &'static str> {
