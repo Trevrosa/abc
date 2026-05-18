@@ -63,7 +63,7 @@ pub async fn play(
 
         let mut greet = ctx.reply("now im downloading..", replyer).await;
 
-        ctx.yt_dlp(url.as_str(), Some(&track_path), "ba*", None, &mut greet)
+        ctx.yt_dlp(url.as_str(), Some(&track_path), "ba", None, &mut greet)
             .await?;
 
         let Ok(bytes) = tokio::fs::read(&track_path).await else {

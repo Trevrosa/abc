@@ -67,15 +67,15 @@ pub async fn get_song(
     // we use yt-dlp output templates (https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#output-template)
     let output = download_path.join("%(title)s [%(id)s].%(ext)s");
 
-    let no_video = args
-        .get_or("novid", 1)
-        .is_some_and(|a| a.is(true) || a.is("novid"));
+    let video = args
+        .get_or("video", 1)
+        .is_some_and(|a| a.is(true) || a.is("video"));
     let mp3 = args
         .get_or("mp3", 2)
         .is_some_and(|a| a.is(true) || a.is("mp3"));
 
-    // `ba*` by default, `ba` if the user wants it.
-    let download_format = if no_video { "ba" } else { "ba*" };
+    // default only audio
+    let download_format = if video { "ba*" } else { "ba" };
     // TODO: handle playlists separately
     let args: &[&str] = if mp3 {
         // ensure we get mp3 so it embeds on discord properly
@@ -165,8 +165,8 @@ pub fn register() -> CreateCommand {
         )
         .add_option(CreateCommandOption::new(
             CommandOptionType::Boolean,
-            "novideo",
-            "only download audio",
+            "video",
+            "also download video",
         ))
         .add_option(CreateCommandOption::new(
             CommandOptionType::Boolean,
