@@ -18,6 +18,9 @@ pub mod ytmusic;
 
 mod yt_dlp;
 
+pub mod flaresolverr;
+pub mod ib;
+
 pub fn embed_message<S: Into<String>>(title: S, image: S, desc: Option<S>) -> CreateReply {
     let mut embed = CreateEmbed::new().title(title).image(image);
     if let Some(desc) = desc {

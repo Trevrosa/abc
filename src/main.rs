@@ -23,6 +23,8 @@ use songbird::SerenityInit;
 
 use tracing::{Level, error, info, warn};
 use tracing_subscriber::EnvFilter;
+
+use utils::flaresolverr;
 use utils::sniping::{MostRecentDeletedMessage, MostRecentEditedMessage};
 use utils::spotify;
 use utils::ytmusic::{self, AccessToken};
@@ -65,6 +67,9 @@ async fn main() -> Result<()> {
         .without_time()
         .init();
 
+    CryptoProvider::install_default(crypto::aws_lc_rs::default_provider()).unwrap();
+    flaresolverr::setup().await?;
+
     let token: &str = include_str!("../token");
     let intents: GatewayIntents = GatewayIntents::all();
 
@@ -72,7 +77,29 @@ async fn main() -> Result<()> {
     let mut cache_settings = Settings::default();
     cache_settings.max_messages = 50;
 
-    let access_token = fs::read(YT_TOKEN_PATH).map_or_else(
+    let mut client: Client = Client::builder(token, intents)
+        .event_handler(handlers::Client)
+        .event_handler(handlers::PrefixCommands)
+        .event_handler(handlers::Sniper)
+        .event_handler(handlers::SlashCommands)
+        .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
+        .type_map_insert::<MostRecentEditedMessage>(HashMap::new())
+        .type_map_insert::<spotify::AccessToken>(None)
+        .type_map_insert::<ytmusic::AccessToken>(get_access_token())
+        .type_map_insert::<Volume>(HashMap::new())
+        .cache_settings(cache_settings)
+        .register_songbird()
+        .await?;
+
+    serenity_ctrlc::ctrlc_with(&client, end_handler)?;
+
+    client.start().await?;
+
+    Ok(())
+}
+
+fn get_access_token() -> Option<AccessToken> {
+    fs::read(YT_TOKEN_PATH).map_or_else(
         |_err| {
             warn!("no {YT_TOKEN_PATH} to load from");
             None
@@ -87,29 +114,7 @@ async fn main() -> Result<()> {
                 None
             }
         },
-    );
-
-    CryptoProvider::install_default(crypto::aws_lc_rs::default_provider()).unwrap();
-
-    let mut client: Client = Client::builder(token, intents)
-        .event_handler(handlers::Client)
-        .event_handler(handlers::PrefixCommands)
-        .event_handler(handlers::Sniper)
-        .event_handler(handlers::SlashCommands)
-        .type_map_insert::<MostRecentDeletedMessage>(HashMap::new())
-        .type_map_insert::<MostRecentEditedMessage>(HashMap::new())
-        .type_map_insert::<spotify::AccessToken>(None)
-        .type_map_insert::<ytmusic::AccessToken>(access_token)
-        .type_map_insert::<Volume>(HashMap::new())
-        .cache_settings(cache_settings)
-        .register_songbird()
-        .await?;
-
-    serenity_ctrlc::ctrlc_with(&client, end_handler)?;
-
-    client.start().await?;
-
-    Ok(())
+    )
 }
 
 // serialize some saved state to disk, then disconnect all shards
@@ -124,6 +129,12 @@ async fn end_handler(disconnector: Option<Disconnector>) {
             info!("saved yt token");
         } else {
             error!("failed to read from global data, can't save");
+        }
+
+        if let Err(err) = flaresolverr::destroy_session().await {
+            warn!("failed to destroy flaresolverr session: {err}");
+        } else {
+            info!("destroyed flaresolverr session");
         }
 
         disconnector.disconnect().await;

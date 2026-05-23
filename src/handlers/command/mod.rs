@@ -17,6 +17,8 @@ pub(super) async fn handle_cmd(
 ) -> Result<(), &'static str> {
     match cmd {
         // misc commands
+        "ib" => commands::ib(ctx, replyer, args).await,
+
         "test" => commands::test(ctx, replyer).await,
         "cat" => commands::cat(ctx, replyer).await,
         "dog" => commands::dog(ctx, replyer).await,

@@ -10,7 +10,7 @@ use tracing::{error, info, warn};
 use crate::commands::voice::{
     dequeue, join, leave, pause, play, resume, seek, set_loop, set_volume, status, stop,
 };
-use crate::commands::{cat, dog, edit_snipe, get_song, snipe, test};
+use crate::commands::{cat, dog, edit_snipe, get_song, ib, snipe, test};
 use crate::handlers::command::handle_cmd;
 use crate::utils::context::CtxExt;
 use crate::utils::reply::Replyer;
@@ -81,6 +81,7 @@ impl EventHandler for SlashCommands {
             pause::register(),
             dequeue::register(),
             set_volume::register(),
+            ib::register(),
         ];
 
         // commands with aliases
