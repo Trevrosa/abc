@@ -45,12 +45,7 @@ pub async fn setup() -> reqwest::Result<()> {
         panic!("flaresolverr not started!");
     }
 
-    request(
-        "sessions.create",
-        json!({"session": "abc"}
-        ),
-    )
-    .await?;
+    request("sessions.create", json!({"session": "abc"})).await?;
 
     task::spawn(async {
         if let Ok(mirrors) = ib::get_mirrors().await
