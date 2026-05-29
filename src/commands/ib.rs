@@ -1,3 +1,4 @@
+use abc::code_fmt;
 use scraper::Html;
 use serenity::all::{CommandOptionType, Context, CreateCommand, CreateCommandOption};
 
@@ -29,8 +30,7 @@ pub async fn ib(ctx: &Context, replyer: &Replyer<'_>, args: Args<'_>) -> Result<
         return Err("no files");
     }
 
-    ctx.reply(format!("```rust\n{files:#?}\n```"), replyer)
-        .await;
+    ctx.reply(code_fmt!(files), replyer).await;
 
     Ok(())
 }

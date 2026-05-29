@@ -1,4 +1,5 @@
 pub mod access_token;
+use abc::code_fmt;
 pub use access_token::AccessToken;
 pub use search::find_track_from_url;
 use tokio::fs;
@@ -182,8 +183,7 @@ pub async fn search(
 
     let searched = ytmusic::search(query.as_ref(), auth).await;
     let Ok(searched) = searched else {
-        let err = format!("```rs\n{:#?}```", searched.unwrap_err());
-        ctx.reply(err, replyer).await;
+        ctx.reply(code_fmt!(searched.unwrap_err()), replyer).await;
         return Err("");
     };
 

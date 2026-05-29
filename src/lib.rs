@@ -2,6 +2,13 @@ use std::{io::ErrorKind, path::Path};
 
 use tracing::{error, info};
 
+#[macro_export]
+macro_rules! code_fmt {
+    ($obj:expr) => {
+        format!("```rust\n{:#?}\n```", $obj)
+    };
+}
+
 /// Like [`std::ops::Index`], but we don't have to return a `ref` of the `Output`.
 pub trait Get<Idx, Output> {
     fn get(&self, index: Idx) -> Option<Output>;
