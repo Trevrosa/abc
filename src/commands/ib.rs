@@ -8,23 +8,22 @@ use crate::utils::reply::Replyer;
 use crate::utils::{Args, flaresolverr};
 
 pub async fn ib(ctx: &Context, replyer: &Replyer<'_>, args: Args<'_>) -> Result<(), &'static str> {
-    // let query = args.full_string();
+    let query = args.full_string();
 
-    // if query.is_empty() {
-    //     return Err("no query");
-    // };
+    if query.is_empty() {
+        return Err("no query");
+    }
 
     let Ok(mirrors) = ib::get_mirrors().await else {
         return Err("could not get mirrors");
     };
 
-    let Ok(mirror) = flaresolverr::get(&mirrors[0].url).await else {
+    let Ok(base) = flaresolverr::get(&mirrors[0].url).await else {
         return Err("could not get mirror");
     };
 
-    let mirror = Html::parse_document(&mirror);
-
-    let files = ib::page_files(&mirror);
+    let page = Html::parse_document(&base);
+    let files = ib::page_files(&page);
 
     if files.is_empty() {
         return Err("no files");

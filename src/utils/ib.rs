@@ -1,3 +1,5 @@
+pub mod parsing;
+
 use scraper::{Html, Selector};
 use serde::Deserialize;
 
