@@ -1,5 +1,7 @@
 pub mod parsing;
 
+use std::borrow::Cow;
+
 use scraper::{Html, Selector};
 use serde::Deserialize;
 

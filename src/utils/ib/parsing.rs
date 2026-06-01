@@ -27,9 +27,9 @@ impl Warn {
 
 #[derive(Debug)]
 pub struct Query {
-    subject: Subject,
-    kind: QueryKind,
-    year: u16,
+    pub subject: Subject,
+    pub kind: QueryKind,
+    pub year: u16,
 }
 
 impl Query {
@@ -66,6 +66,14 @@ pub enum QueryKind {
 }
 
 impl QueryKind {
+    /// indexed by enum value, [`Self::All`] is not defined
+    pub const BASES: &[&str] = &[
+        "IB PAST PAPERS - YEAR",
+        "IB DOCUMENTS/Data and Formula Booklets",
+        "IB SUBJECT GUIDES",
+        "IB SUBJECT REPORTS",
+    ];
+
     fn parse(s: &str) -> Self {
         if s.contains("past") {
             Self::PastPaper
